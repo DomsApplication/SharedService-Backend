@@ -1,0 +1,95 @@
+#############################################################################################################################################################
+# {dynamodb}             
+# More info about Function Resource: 
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dynamodb-table.html
+#############################################################################################################################################################
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  deploy the serverless microservice: dynamodb for data source:
+
+Parameters:
+  StackName:
+    Type: String
+    Description: "this is organization profile "
+  DataSourceName:
+    Type: String
+    Description: "DynamoDB table for user management with all tenant base"
+
+Resources:
+  # <<<<<<<  {{DYNAMODB}} DynamoDB table for serverless microserive architecture for DOMS product (Data Object Modeling) >>>>>>>>>>>
+  DataSourceDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Join ["",[!Ref StackName,"-",!Ref DataSourceName]]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        -
+          AttributeName: "PK"
+          AttributeType: "S"
+        -
+          AttributeName: "SK"
+          AttributeType: "S"
+        -
+          AttributeName: "ENTITIES"
+          AttributeType: "S"
+        -
+          AttributeName: "PARENT"
+          AttributeType: "S"
+        -
+          AttributeName: "SEARCH_VAL"
+          AttributeType: "S"
+      KeySchema:
+        - 
+          AttributeName: "PK"
+          KeyType: "HASH"
+        - 
+          AttributeName: "SK"
+          KeyType: "RANGE"
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "ENTITIES_INX"
+          KeySchema:
+            -
+              AttributeName: "ENTITIES"
+              KeyType: "HASH"
+            -
+              AttributeName: "PK"
+              KeyType: "RANGE"  
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+        -
+          IndexName: "PATENT_INX"
+          KeySchema:
+            -
+              AttributeName: "PARENT"
+              KeyType: "HASH"
+            -
+              AttributeName: "PK"
+              KeyType: "RANGE"  
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+        -
+          IndexName: "SEARCH_INX"
+          KeySchema:
+            -
+              AttributeName: "SEARCH_VAL"
+              KeyType: "HASH"
+            -
+              AttributeName: "PK"
+              KeyType: "RANGE"  
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+
+#############################################################################################################################################################
+# {output}     
+# More info about Output: 
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+#############################################################################################################################################################
+Outputs:
+  DataSourceDynamoDBTableArn:
+    Description: "DynamoDB table for serverless microserive architecture for DOMS product (Data Object Modeling)"
+    Value: !GetAtt DataSourceDynamoDBTable.Arn
+    Export:
+      Name: DataSourceDynamoDBTableArn
