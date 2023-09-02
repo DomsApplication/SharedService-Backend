@@ -1,0 +1,16 @@
+name: Bulk Download Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release/pdf-converter/*
+    paths: 'functions-java/pdf-converter/**'
+
+
+jobs:
+
+  release:
+    uses: ArisGlobal/SharedActions/.github/workflows/java-maven-release.yml@latest
+    with:
+      working-directory: functions-java/pdf-converter

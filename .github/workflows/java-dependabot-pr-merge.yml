@@ -1,0 +1,24 @@
+# This workflow runs only for PRs raised by dependabot.
+# The reason why this needs to be a standalone workflow is because GitHub prohibits dependabot PRs to access GitHub secrets.
+# Since our CI workflow deals with GitHub secrets for image push to ECR, we cannot have dependabot workflow inside CI workflow.
+
+name: Dependabot PR auto merge workflow
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  dependabot-pr-auto-merge:
+    # specify "write" permission for GITHUB_TOKEN, so it can merge the PRs raised by Dependabot, see step below.
+    permissions:
+      pull-requests: write
+      contents: write
+    uses: ArisGlobal/SharedActions/.github/workflows/java-sam-build-dependabot-pr-merge.yml@latest
+    with:
+      sam-version: '1.71.0'
+      sam-template: 'template.yaml'
+      
