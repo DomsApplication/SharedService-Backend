@@ -11,5 +11,7 @@
 
     <modules>
         <module>doms-authentication</module>
+        <module>doms-authorization</module>
+        <module>doms-platform</module>
     </modules>
 </project>

@@ -1,12 +1,45 @@
-name: Bulk Download Pipeline
+# This workflowwill build and deploy the server-less architecture Lambda , API gateway using aws sam command
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: sam deployment Pipeline
 
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Environment to run the workflow against'
-        type: environment
+      env:
         required: true
+        type: environment
+        default: 'dev'
+      # working-directory is added to accommodate monorepo.  For multi repo, defaults to '.', current directory
+      working-directory:
+        required: false
+        type: string
+        default: '.'
+      # sam version
+      sam-version:
+        required: false
+        type: string
+        default: '1.71.0'
+      # sam template
+      sam-template:
+        required: false
+        type: string
+        default: 'template.yaml'
+      # stack name
+      stack-name:
+        required: true
+        type: string
+        default: 'shavika-service'
+      # artifacts bucket
+      artifacts-bucket:
+        required: false
+        type: string
+        default: 'aws-sam-cli-managed-pipeline-artifacts'
+
   pull_request:
     branches: [ main ]
 #   push:
@@ -15,19 +48,97 @@ on:
 permissions:  # added using https://github.com/step-security/secure-workflows
   contents: read
 
+
 jobs:
 
   build-package-deploy:
+
+    # important to specify environment here, defaults to 'dev', so github ations knows where to retrieve the secrets
+    environment: ${{ inputs.env || 'dev' }}
+
+    # env variables have to be defined after "environment", so github actions knows where to retrieve the secrets
+    env:
+      SAM_TEMPLATE: ${{ inputs.sam-template }}
+      STACK_NAME: ${{ inputs.stack-name }}
+      ROLE_TO_ASSUME: ${{ secrets.ROLE_TO_ASSUME }}
+      CLOUDFORMATION_EXECUTION_ROLE: ${{ secrets.ROLE_TO_ASSUME }}
+      ARTIFACTS_BUCKET: ${{ inputs.artifacts-bucket }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+    runs-on: ubuntu-latest
     permissions:
       id-token: write # need this for OIDC
       contents: read
-    uses: ArisGlobal/SharedActions/.github/workflows/java-sam-build-pkg-deploy.yml@latest
-    with:
-      env: ${{ github.event.inputs.environment }}
-      sam-version: '1.71.0'
-      stack-name: 'BulkdownloadService'
-      sam-template: 'template.yaml'
-      artifacts-bucket: 'aws-sam-cli-managed-pipeline-artifacts'
-      working-directory: './functions-java/pdf-converter'
-      sonar-scan-flag: false
-    secrets: inherit      
+
+    # dependabot PRs do not need to run this flow as GitHub prohibits dependabot PRs to access workflows
+    # dealing with secrets due to security reason.
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        with:
+          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          #role-to-assume: ${{ secrets.ROLE_TO_ASSUME }} # TODO: enable once switch into IAM role base access
+
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+        with:
+          version: ${{ inputs.sam-version }}
+          use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
+
+      - name: Print debug info
+        run: |
+          echo environment is ${{ inputs.env || 'dev' }}
+          echo working_directory is ${{ inputs.working-directory }}
+          echo SAM version is ${{ inputs.sam-version }}
+          echo stack-name is ${{ inputs.stack-name }}
+          echo sam-template is ${{ inputs.sam-template }}
+          echo artifacts-bucket is ${{ inputs.artifacts-bucket }}
+          echo PARAMETER_OVERRIDES: ${{ secrets.PARAMETER_OVERRIDES }} | sed -e 's/\(.\)/\1 /g'
+
+      # Build inside Docker containers
+      - name: Build resources
+        run: sam build --template ${SAM_TEMPLATE} --use-container
+
+      - name: Set project version as environment variable
+        run: |
+          cd ${{ inputs.working-directory }}
+          echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+
+      - name: Upload artifacts to artifact bucket
+        run: |
+          if ! aws s3 ls s3://${ARTIFACTS_BUCKET}-${{ inputs.env || 'dev' }} &> /dev/null ; then
+            aws s3api create-bucket --bucket ${ARTIFACTS_BUCKET}-${{ inputs.env || 'dev' }}  --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }} --region ${{ secrets.AWS_REGION }}
+          fi
+          sam package \
+            --s3-bucket ${ARTIFACTS_BUCKET}-${{ inputs.env || 'dev' }} \
+            --region ${AWS_REGION} \
+            --output-template-file packaged.yaml
+
+      - name: Deploy
+        run: |
+          sam deploy --stack-name ${STACK_NAME} \
+            --template packaged.yaml \
+            --capabilities CAPABILITY_IAM \
+            --region ${AWS_REGION} \
+            --s3-bucket ${ARTIFACTS_BUCKET}-${{ inputs.env || 'dev' }} \
+            --no-fail-on-empty-changeset \
+            --role-arn ${CLOUDFORMATION_EXECUTION_ROLE} \
+            ${{ secrets.PARAMETER_OVERRIDES || ''}}
+
+      - name: Delete if failure
+        if: failure()
+        run: |
+          sam delete --stack-name ${STACK_NAME} \
+            --region ${AWS_REGION} \
+            --no-prompts

@@ -4,27 +4,27 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.doms</groupId>
-    <artifactId>doms-authentication</artifactId>
+    <artifactId>doms-authorization</artifactId>
     <version>2023.1.0.0</version>
     <packaging>jar</packaging>
-    <name>DOMS project Authentication service</name>
+    <name>DOMS project Authorization service</name>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <software.amazon.awssdk.version>2.20.140</software.amazon.awssdk.version>
+        <software.amazon.awssdk.version>2.20.139</software.amazon.awssdk.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-java-events.version>3.11.3</aws-lambda-java-events.version>
         <aws-lambda-java-tests.version>1.1.1</aws-lambda-java-tests.version>
         <aws-lambda-java-log4j2.version>1.5.1</aws-lambda-java-log4j2.version>
-        <software-amazon-awssdk-xray.version>2.20.140</software-amazon-awssdk-xray.version>
+        <software-amazon-awssdk-xray.version>2.20.139</software-amazon-awssdk-xray.version>
         <powertools.version>1.17.0</powertools.version>
         <maven-shade-plugin.version>3.5.0</maven-shade-plugin.version>
         <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
         <maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
-        <checkstyle.version>10.12.3</checkstyle.version>
+        <checkstyle.version>10.12.2</checkstyle.version>
         <aspectj-maven-plugin.version>1.14.0</aspectj-maven-plugin.version>
         <lombok.version>1.18.28</lombok.version>
         <aspectj.version>1.9.20</aspectj.version>
