@@ -106,7 +106,7 @@ jobs:
 
       # Build inside Docker containers
       - name: Build resources
-        run: sam build --template ${SAM_TEMPLATE} --use-container
+        run: sam build --use-container
 
       - name: Set project version as environment variable
         run: |
