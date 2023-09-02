@@ -32,15 +32,6 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
 
-    # accommodating monorepo, this sets the working directory at the job level, for multi repo, defaults to "."
-    defaults:
-      run:
-        working-directory: ${{ inputs.working-directory }}
-
-    # env variables have to be defined after "environment", so github actions knows where to retrieve the secrets
-    env:
-      SAM_TEMPLATE: ${{ inputs.sam-template }}
-
     # run this workflow only for dependabot
     if: ${{ github.actor == 'dependabot[bot]'}}
     steps:
