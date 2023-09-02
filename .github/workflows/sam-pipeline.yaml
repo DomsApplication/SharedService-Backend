@@ -116,7 +116,7 @@ jobs:
       - name: Deploy
         run: |
           sam deploy --config-file samconfig.toml \
-          --template-file template.yml
+          --template-file ${SAM_TEMPLATE}
 
       - name: Delete if failure
         if: failure()
