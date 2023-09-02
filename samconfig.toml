@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "BulkdownloadService"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-19axq2di9ml7u"
+s3_prefix = "BulkdownloadService"
+region = "us-east-2"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "ParameterInstancePrefix=\"bulkdownload\" TagProvisioner=\"SAM\" TagProject=\"LSICM\" TagBusinessUnit=\"Platform\" TagBusinessModel=\"shared\" TagProductVersion=\"2023.1.0.0\" EventSourceAccountNumber=\"342212914682\" EventSourceInvokeTargetRole=\"Amazon_EventBridge_Invoke_ApiGateway_1382822456\""
+image_repositories = []

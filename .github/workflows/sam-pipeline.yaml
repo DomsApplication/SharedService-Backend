@@ -1,0 +1,33 @@
+name: Bulk Download Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run the workflow against'
+        type: environment
+        required: true
+  pull_request:
+    branches: [ main ]
+#   push:
+#     branches: [ main ]
+
+permissions:  # added using https://github.com/step-security/secure-workflows
+  contents: read
+
+jobs:
+
+  build-package-deploy:
+    permissions:
+      id-token: write # need this for OIDC
+      contents: read
+    uses: ArisGlobal/SharedActions/.github/workflows/java-sam-build-pkg-deploy.yml@latest
+    with:
+      env: ${{ github.event.inputs.environment }}
+      sam-version: '1.71.0'
+      stack-name: 'BulkdownloadService'
+      sam-template: 'template.yaml'
+      artifacts-bucket: 'aws-sam-cli-managed-pipeline-artifacts'
+      working-directory: './functions-java/pdf-converter'
+      sonar-scan-flag: false
+    secrets: inherit      
