@@ -65,7 +65,7 @@ jobs:
 
       # Build inside Docker containers
       - name: Build resources
-        run: sam build --template ${SAM_TEMPLATE} --use-container
+        run: sam build --template ${{ inputs.sam-template }} --use-container
 
   automerge:
     needs: build-and-test

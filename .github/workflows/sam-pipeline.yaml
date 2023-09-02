@@ -53,10 +53,10 @@ jobs:
 
   build-package-deploy:
 
-    # important to specify environment here, defaults to 'dev', so github ations knows where to retrieve the secrets
+    # important to specify environment here, defaults to 'dev', so GitHub ations knows where to retrieve the secrets
     environment: ${{ inputs.env || 'dev' }}
 
-    # env variables have to be defined after "environment", so github actions knows where to retrieve the secrets
+    # env variables have to be defined after "environment", so GitHub actions knows where to retrieve the secrets
     env:
       SAM_TEMPLATE: ${{ inputs.sam-template }}
       STACK_NAME: ${{ inputs.stack-name }}
@@ -129,11 +129,10 @@ jobs:
         run: |
           sam deploy --stack-name ${STACK_NAME} \
             --template packaged.yaml \
-            --capabilities CAPABILITY_IAM \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
             --region ${AWS_REGION} \
             --s3-bucket ${ARTIFACTS_BUCKET}-${{ inputs.env || 'dev' }} \
             --no-fail-on-empty-changeset \
-            --role-arn ${CLOUDFORMATION_EXECUTION_ROLE} \
             ${{ secrets.PARAMETER_OVERRIDES || ''}}
 
       - name: Delete if failure
