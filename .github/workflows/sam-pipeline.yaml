@@ -130,7 +130,15 @@ jobs:
 
       # Deployment
       - name: Deploy
-        run: sam deploy --config-file samconfig.toml
+        run: |
+          sam deploy --stack-name ${{ inputs.stack-name }} \
+            --template packaged.yaml \
+            --capabilities CAPABILITY_IAM \
+            --region ${{ secrets.AWS_REGION }} \
+            --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
+            --no-fail-on-empty-changeset \
+            --role-arn ${CLOUDFORMATION_EXECUTION_ROLE} \
+            ${{ secrets.PARAMETER_OVERRIDES || ''}}
 
       - name: Delete if failure
         if: failure()
