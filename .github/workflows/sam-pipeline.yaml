@@ -116,27 +116,9 @@ jobs:
           cd ${{ inputs.working-directory }}
           echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
 
-      - name: Upload artifacts to artifact bucket
-        run: |
-          if ! aws s3 ls s3://${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} &> /dev/null ; then
-            echo aws s3 ls
-            aws s3api create-bucket --bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }}  --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }} --region ${{ secrets.AWS_REGION }}
-          fi
-          sam package \
-            --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
-            --region ${{ secrets.AWS_REGION }} \
-            --output-template-file packaged.yaml
-
+      # Deployment
       - name: Deploy
-        run: |
-          sam deploy --stack-name ${{ inputs.stack-name }} \
-            --template packaged.yaml \
-            --capabilities CAPABILITY_IAM \
-            --region ${{ secrets.AWS_REGION }} \
-            --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
-            --no-fail-on-empty-changeset \
-            --role-arn ${CLOUDFORMATION_EXECUTION_ROLE} \
-            ${{ secrets.PARAMETER_OVERRIDES || ''}}
+        run: sam deploy --config-file samconfig.toml
 
       - name: Delete if failure
         if: failure()
