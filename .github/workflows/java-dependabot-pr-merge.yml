@@ -7,50 +7,34 @@ name: Dependabot PR auto merge workflow
 on:
   workflow_dispatch:
     inputs:
-      env:
-        required: true
-        type: environment
-        default: 'dev'
       # working-directory is added to accommodate monorepo.  For multi repo, defaults to '.', current directory
       working-directory:
         required: false
         type: string
-        default: '.'
-      sam-version:
+        default: './functions-java'
+      java-version:
         required: false
         type: string
-        default: '1.71.0'
-      sam-template:
-        required: false
-        type: string
-        default: 'template.yaml'
+        default: '17'
 
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+    paths: ['functions-java/**']
 
 jobs:
 
   build-and-test:
-
-    # important to specify environment here, defaults to 'dev', so GitHub ations knows where to retrieve the secrets
-    environment: ${{ inputs.env || 'dev' }}
-
-    # env variables have to be defined after "environment", so GitHub actions knows where to retrieve the secrets
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-
     name: Build and Test
     runs-on: ubuntu-latest
+
     permissions:
       pull-requests: write # need this for OIDC
       contents: write
 
     # run this workflow only for dependabot
-    if: ${{ github.actor == 'dependabot[bot]'}}
+    #if: ${{ github.actor == 'dependabot[bot]'}}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09
@@ -58,30 +42,22 @@ jobs:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout Code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+        uses: actions/checkout@v3
 
-      - name: Setup SAM
-        uses: aws-actions/setup-sam@v2
+      - name: Setup jdk
+        uses: actions/setup-java@v3
         with:
-          use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          #role-to-assume: ${{ secrets.ROLE_TO_ASSUME }} # TODO: enable once switch into IAM role base access
+          java-version: ${{ inputs.java-version }}
+          distribution: 'adopt'
+          cache: maven
 
       - name: Print debug info
         run: |
-          echo working_directory is ${{ inputs.working-directory }}
-          echo SAM version is ${{ inputs.sam-version }}
-          echo sam-template is ${{ inputs.sam-template }}
+          echo working-directory: ${{ inputs.working-directory }}
+          echo java-version: ${{ inputs.java-version }}
 
-      # Build inside Docker containers
-      - name: Build resources
-        run: sam build --template ${{ inputs.sam-template }} --use-container
+      - name: Build with Maven
+        run: mvn clean install --file ${{ inputs.working-directory }}/pom.xml
 
   automerge:
     needs: build-and-test
@@ -91,7 +67,7 @@ jobs:
       contents: write
 
     # run this workflow only for dependabot
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    #if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
