@@ -38,7 +38,7 @@ on:
       artifacts-bucket:
         required: false
         type: string
-        default: 'aws-sam-cli-managed-pipeline-artifacts'
+        default: 'aws-sam-cli-managed-default-samclisourcebucket-aio9a9sdja'
 
   pull_request:
     branches: [ main ]
@@ -78,21 +78,20 @@ jobs:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout Code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+        uses: actions/checkout@v3
+
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
           #role-to-assume: ${{ secrets.ROLE_TO_ASSUME }} # TODO: enable once switch into IAM role base access
-
-      - name: Setup SAM
-        uses: aws-actions/setup-sam@d388945c16af7a5b3da65436576e1c2be088f040 # v2
-        with:
-          version: ${{ inputs.sam-version }}
-          use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
 
       - name: Print debug info
         run: |
@@ -103,6 +102,10 @@ jobs:
           echo sam-template         : ${{ inputs.sam-template }}
           echo artifacts-bucket     : ${{ inputs.artifacts-bucket }}
           echo PARAMETER_OVERRIDES  : ${{ secrets.PARAMETER_OVERRIDES }} | sed -e 's/\(.\)/\1 /g'
+
+      # SAM template validate
+      - name: Template Validate
+        run: sam validate
 
       # Build inside Docker containers
       - name: Build resources
@@ -116,28 +119,33 @@ jobs:
       - name: Upload artifacts to artifact bucket
         run: |
           if ! aws s3 ls s3://${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} &> /dev/null ; then
+            echo "=======> Bucket not available with the name of :" ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }}
             aws s3api create-bucket --bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }}  --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }} --region ${{ secrets.AWS_REGION }}
+            echo "=======> Bucket created with the name of :" ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }}
           fi
           sam package \
             --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
             --region ${{ secrets.AWS_REGION }} \
             --output-template-file packaged.yaml
 
+      # Deployment
       - name: Deploy
         run: |
           sam deploy --stack-name ${{ inputs.stack-name }} \
             --template packaged.yaml \
-            --capabilities CAPABILITY_IAM \
+            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
             --region ${{ secrets.AWS_REGION }} \
             --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
             --no-fail-on-empty-changeset \
-            --role-arn ${CLOUDFORMATION_EXECUTION_ROLE} \
+            --no-confirm-changeset \
+            --no-disable-rollback \
             ${{ secrets.PARAMETER_OVERRIDES || ''}}
 
       - name: Delete if failure
         if: failure()
         run: |
           sam delete --stack-name ${{ inputs.stack-name }} \
+            --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
             --region ${{ secrets.AWS_REGION }} \
             --no-prompts
           
