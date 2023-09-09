@@ -137,7 +137,7 @@ jobs:
             --region ${{ secrets.AWS_REGION }} \
             --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
             --no-fail-on-empty-changeset \
-            --confirm-changeset \
+            --no-confirm-changeset \
             ${{ secrets.PARAMETER_OVERRIDES || ''}}
 
       - name: Delete if failure
