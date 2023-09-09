@@ -38,7 +38,7 @@ on:
       artifacts-bucket:
         required: false
         type: string
-        default: 'aws-sam-cli-managed-pipeline-artifacts'
+        default: 'aws-sam-cli-managed-default-samclisourcebucket-aio9a9sdja'
 
   pull_request:
     branches: [ main ]
@@ -115,6 +115,18 @@ jobs:
         run: |
           cd ${{ inputs.working-directory }}
           echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+
+      - name: Upload artifacts to artifact bucket
+        run: |
+          if ! aws s3 ls s3://${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} &> /dev/null ; then
+            echo "=======> Bucket not available with the name of :" ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }}
+            aws s3api create-bucket --bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }}  --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }} --region ${{ secrets.AWS_REGION }}
+            echo "=======> Bucket created with the name of :" ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }}
+          fi
+          sam package \
+            --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
+            --region ${{ secrets.AWS_REGION }} \
+            --output-template-file packaged.yaml
 
       # Deployment
       - name: Deploy
