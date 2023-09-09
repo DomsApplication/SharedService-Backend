@@ -78,21 +78,20 @@ jobs:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout Code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+        uses: actions/checkout@v3
+
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
           #role-to-assume: ${{ secrets.ROLE_TO_ASSUME }} # TODO: enable once switch into IAM role base access
-
-      - name: Setup SAM
-        uses: aws-actions/setup-sam@d388945c16af7a5b3da65436576e1c2be088f040 # v2
-        with:
-          version: ${{ inputs.sam-version }}
-          use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
 
       - name: Print debug info
         run: |
@@ -103,6 +102,10 @@ jobs:
           echo sam-template         : ${{ inputs.sam-template }}
           echo artifacts-bucket     : ${{ inputs.artifacts-bucket }}
           echo PARAMETER_OVERRIDES  : ${{ secrets.PARAMETER_OVERRIDES }} | sed -e 's/\(.\)/\1 /g'
+
+      # SAM template validate
+      - name: Template Validate
+        run: sam validate
 
       # Build inside Docker containers
       - name: Build resources
