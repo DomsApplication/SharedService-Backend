@@ -2,13 +2,13 @@ package com.doms.authentication;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.doms.authentication.dto.RequestEvent;
+import com.doms.authentication.dto.ResponseEvent;
 import com.doms.authentication.factory.DependencyFactory;
 import com.doms.authentication.utils.DomsLogger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public class App implements RequestHandler<RequestEvent, ResponseEvent> {
 
     private final ObjectMapper objectMapper;
 
@@ -30,9 +30,9 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
 
 
     @Override
-    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent,
-                                                      Context context) {
+    public ResponseEvent handleRequest(RequestEvent requestEvent,
+                                       Context context) {
         DomsLogger.setLoggerApi(context);
-        return new APIGatewayProxyResponseEvent().withBody(apiGatewayProxyRequestEvent.getBody());
+        return ResponseEvent.builder().requestId(requestEvent.getRequestId()).build();
     }
 }

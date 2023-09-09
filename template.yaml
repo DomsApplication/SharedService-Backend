@@ -40,45 +40,63 @@ Parameters:
     Default: "doms"
     Description: "DynamoDB user management table with all tenant base"
 
+Globals:
+  Function:
+    Runtime: java11
+    Tracing: Active
+    MemorySize: 512
+    Timeout: 60
+
 
 Resources:
-
-  DataSourceStack:
-    Type: AWS::CloudFormation::Stack
+  authenticationFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      TemplateURL: ./stack-datasource.yaml
-      Parameters:
-        StackName: !Ref StackName
-        DataSourceName: !Ref DataSourceName
-      Tags:
-        - Key: Name
-          Value: DataSourceStack
+      CodeUri: functions-java/doms-authentication
+      Handler: com.doms.authentication.App::handleRequest
+      Role: !GetAtt AuthenticationLambdaExecutionRole.Arn
+      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+        Variables:
+          JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1 # More info about tiered compilation https://aws.amazon.com/blogs/compute/optimizing-aws-lambda-function-performance-for-java/
+      AutoPublishAlias: live
+      SnapStart:
+          ApplyOn: PublishedVersions
 
-  LambdaStack:
-    Type: AWS::CloudFormation::Stack
+  # <<<<<<< {{ROLE}} Authentication lambda execution role  >>>>>>>>>>>
+  AuthenticationLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
     Properties:
-      TemplateURL: ./stack-lambda.yaml
-      Parameters:
-        StackName: !Ref StackName
-        DataSourceName: !Ref DataSourceName
-      Tags:
-        - Key: Name
-          Value: LambdaStack
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
 
-  ApiGatewayStack:
-    Type: AWS::CloudFormation::Stack
-    DependsOn:
-      - LambdaStack
+  # <<<<<<<  {{POLICY}} Basic Lambda execution policy >>>>>>>>>>>
+  LambdaBasicExecutionPolicy:
+    Type: AWS::IAM::Policy
     Properties:
-      TemplateURL: ./stack-api-gateway.yaml
-      Parameters:
-        AuthenticationFunctionArn: !GetAtt LambdaStack.Outputs.AuthenticationFunctionArn
-        AuthorizationFunctionArn: !GetAtt LambdaStack.Outputs.AuthorizationFunctionArn
-        PlatformFunctionArn: !GetAtt LambdaStack.Outputs.PlatformFunctionArn
-      Tags:
-        - Key: Name
-          Value: ApiGatewayStack
-
+      PolicyName: LambdaBasicExecution
+      Roles:
+        - !Ref AuthenticationLambdaExecutionRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: CreateLogGroup
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+            Resource:
+              - "*"
+          - Sid: WriteLogStreamsAndGroups
+            Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - "*"
 
 #############################################################################################################################################################
 # {output}     
@@ -88,23 +106,4 @@ Resources:
 Outputs:
   AuthenticationFunctionArn:
     Description: "Authentication Lambda funcation ARN value"
-    Value: 
-      Fn::GetAtt: LambdaStack.Outputs.AuthenticationFunctionArn
-  AuthorizationFunctionArn:
-    Description: "Authorization Lambda funcation ARN value"
-    Value: 
-      Fn::GetAtt: LambdaStack.Outputs.AuthorizationFunctionArn
-  PlatformFunctionArn:
-    Description: "Platform Lambda funcation ARN value"
-    Value: 
-      Fn::GetAtt: LambdaStack.Outputs.PlatformFunctionArn
-
-  DataSourceDynamoDBTableArn:
-    Description: "DynamoDB table for serverless microserive architecture for DOMS product (Data Object Modeling)"
-    Value: 
-      Fn::GetAtt: DataSourceStack.Outputs.DataSourceDynamoDBTableArn
-
-  RestApiEndPoint:
-    Description: "Application end point to access form public"
-    Value: 
-      Fn::GetAtt: ApiGatewayStack.Outputs.RestApiEndPoint
+    Value: !GetAtt authenticationFunction.Arn

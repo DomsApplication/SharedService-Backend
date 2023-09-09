@@ -31,17 +31,20 @@ jobs:
   build-and-test:
     name: Build and Test
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # need this for OIDC
+      contents: write
 
     # run this workflow only for dependabot
     if: ${{ github.actor == 'dependabot[bot]'}}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09
         with:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -52,10 +55,10 @@ jobs:
           #role-to-assume: ${{ secrets.ROLE_TO_ASSUME }} # TODO: enable once switch into IAM role base access
 
       - name: Setup SAM
-        uses: aws-actions/setup-sam@v2
+        uses: aws-actions/setup-sam@d388945c16af7a5b3da65436576e1c2be088f040 # v2
         with:
           version: ${{ inputs.sam-version }}
-          use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
+          #use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
 
       - name: Print debug info
         run: |

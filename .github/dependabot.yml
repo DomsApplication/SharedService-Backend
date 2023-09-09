@@ -11,18 +11,6 @@ updates:
       interval: "daily"
     open-pull-requests-limit: 10
 
-  - package-ecosystem: "maven"
-    directory: "functions-java/doms-authorization/"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 10
-
-  - package-ecosystem: "maven"
-    directory: "functions-java/doms-platform/"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 10
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

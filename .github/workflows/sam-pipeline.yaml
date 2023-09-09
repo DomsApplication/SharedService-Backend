@@ -73,15 +73,15 @@ jobs:
     if: github.actor != 'dependabot[bot]'
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09 # v2.5.1
+        uses: step-security/harden-runner@8ca2b8b2ece13480cda6dacd3511b49857a23c09
         with:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -89,37 +89,57 @@ jobs:
           #role-to-assume: ${{ secrets.ROLE_TO_ASSUME }} # TODO: enable once switch into IAM role base access
 
       - name: Setup SAM
-        uses: aws-actions/setup-sam@v2
+        uses: aws-actions/setup-sam@d388945c16af7a5b3da65436576e1c2be088f040 # v2
         with:
           version: ${{ inputs.sam-version }}
           use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
 
       - name: Print debug info
         run: |
-          echo environment is ${{ inputs.env || 'dev' }}
-          echo working_directory is ${{ inputs.working-directory }}
-          echo SAM version is ${{ inputs.sam-version }}
-          echo stack-name is ${{ inputs.stack-name }}
-          echo sam-template is ${{ inputs.sam-template }}
-          echo artifacts-bucket is ${{ inputs.artifacts-bucket }}
-          echo PARAMETER_OVERRIDES: ${{ secrets.PARAMETER_OVERRIDES }} | sed -e 's/\(.\)/\1 /g'
+          echo environment          : ${{ inputs.env || 'dev' }}
+          echo working_directory    : ${{ inputs.working-directory }}
+          echo SAM version          : ${{ inputs.sam-version }}
+          echo stack-name           : ${{ inputs.stack-name }}
+          echo sam-template         : ${{ inputs.sam-template }}
+          echo artifacts-bucket     : ${{ inputs.artifacts-bucket }}
+          echo PARAMETER_OVERRIDES  : ${{ secrets.PARAMETER_OVERRIDES }} | sed -e 's/\(.\)/\1 /g'
 
       # Build inside Docker containers
       - name: Build resources
-        run: sam build --use-container
+        run: sam build --template ${{ inputs.sam-template }} --use-container
 
       - name: Set project version as environment variable
         run: |
           cd ${{ inputs.working-directory }}
           echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
 
+      - name: Upload artifacts to artifact bucket
+        run: |
+          if ! aws s3 ls s3://${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} &> /dev/null ; then
+            aws s3api create-bucket --bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }}  --create-bucket-configuration LocationConstraint=${{ secrets.AWS_REGION }} --region ${{ secrets.AWS_REGION }}
+          fi
+          sam package \
+            --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
+            --region ${{ secrets.AWS_REGION }} \
+            --output-template-file packaged.yaml
+
       - name: Deploy
         run: |
-          sam deploy --config-file samconfig.toml
+          sam deploy --stack-name ${{ inputs.stack-name }} \
+            --template packaged.yaml \
+            --capabilities CAPABILITY_IAM \
+            --region ${{ secrets.AWS_REGION }} \
+            --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
+            --no-fail-on-empty-changeset \
+            --role-arn ${CLOUDFORMATION_EXECUTION_ROLE} \
+            ${{ secrets.PARAMETER_OVERRIDES || ''}}
 
       - name: Delete if failure
         if: failure()
         run: |
-          sam delete --stack-name ${STACK_NAME} \
-            --region ${AWS_REGION} \
+          sam delete --stack-name ${{ inputs.stack-name }} \
+            --region ${{ secrets.AWS_REGION }} \
             --no-prompts
+          
+          
+          
