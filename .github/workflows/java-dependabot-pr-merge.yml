@@ -7,6 +7,10 @@ name: Dependabot PR auto merge workflow
 on:
   workflow_dispatch:
     inputs:
+      env:
+        required: true
+        type: environment
+        default: 'dev'
       # working-directory is added to accommodate monorepo.  For multi repo, defaults to '.', current directory
       working-directory:
         required: false
@@ -29,6 +33,16 @@ on:
 jobs:
 
   build-and-test:
+
+    # important to specify environment here, defaults to 'dev', so GitHub ations knows where to retrieve the secrets
+    environment: ${{ inputs.env || 'dev' }}
+
+    # env variables have to be defined after "environment", so GitHub actions knows where to retrieve the secrets
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
     name: Build and Test
     runs-on: ubuntu-latest
     permissions:
@@ -46,6 +60,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
 
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -53,12 +72,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
           #role-to-assume: ${{ secrets.ROLE_TO_ASSUME }} # TODO: enable once switch into IAM role base access
-
-      - name: Setup SAM
-        uses: aws-actions/setup-sam@d388945c16af7a5b3da65436576e1c2be088f040 # v2
-        with:
-          version: ${{ inputs.sam-version }}
-          #use-installer: true #recommended approach, does not require Python to be installed, and is faster than the default installation method.
 
       - name: Print debug info
         run: |
