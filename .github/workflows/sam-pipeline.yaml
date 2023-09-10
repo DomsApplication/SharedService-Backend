@@ -38,7 +38,7 @@ on:
       artifacts-bucket:
         required: false
         type: string
-        default: 'aws-sam-cli-managed-default-samclisourcebucket-aio9a9sdja'
+        default: 'aws-sam-cli-managed-default-doms-projects-4747'
 
   pull_request:
     branches: [ main ]
