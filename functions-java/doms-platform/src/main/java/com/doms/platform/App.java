@@ -1,11 +1,11 @@
-package com.doms.authentication;
+package com.doms.platform;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.doms.authentication.factory.DependencyFactory;
-import com.doms.authentication.utils.DomsLogger;
+import com.doms.platform.factory.DependencyFactory;
+import com.doms.platform.utils.DomsLogger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;

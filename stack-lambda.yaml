@@ -18,14 +18,15 @@ Parameters:
 
 Globals:
   Function:
-    Environment:
-      # # Environment variables used by every function
+    Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
       Variables:
-        NODE_OPTIONS: --enable-source-maps
-        AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
-    Runtime: nodejs18.x
+        JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1 # More info about tiered compilation https://aws.amazon.com/blogs/compute/optimizing-aws-lambda-function-performance-for-java/
+    AutoPublishAlias: live
+    SnapStart:
+      ApplyOn: PublishedVersions
+    Runtime: java11
     Tracing: Active
-    Architectures: 
+    Architectures:
       - x86_64
     MemorySize: 128
     Timeout: 10
@@ -37,32 +38,22 @@ Resources:
     Properties:
       CodeUri: functions-java/doms-authentication
       Handler: com.doms.authentication.App::handleRequest
-      Runtime: java11
-      Tracing: Active
-      MemorySize: 512
-      Timeout: 60
       Role: !GetAtt AuthenticationLambdaExecutionRole.Arn
-      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
-        Variables:
-          JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1 # More info about tiered compilation https://aws.amazon.com/blogs/compute/optimizing-aws-lambda-function-performance-for-java/
-      AutoPublishAlias: live
-      SnapStart:
-        ApplyOn: PublishedVersions
 
   # <<<<<<< {{LAMBDA FUNCTION}} authorization >>>>>>>>>>>
   authorizationFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: functions-nodejs/authorization
-      Handler: index.handler
+      CodeUri: functions-java/doms-authorization
+      Handler: com.doms.authorization.App::handleRequest
       Role: !GetAtt AuthorizationLambdaExecutionRole.Arn
 
   # <<<<<<< {{LAMBDA FUNCTION}} platform  >>>>>>>>>>>
   platformFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: functions-nodejs/platform
-      Handler: index.handler
+      CodeUri: functions-java/doms-platform
+      Handler: com.doms.platform.App::handleRequest
       Role: !GetAtt PlatformLambdaExecutionRole.Arn
         
 

@@ -1,4 +1,4 @@
-package com.doms.authentication.exception;
+package com.doms.authorization.exception;
 
 public class DomsLambdaException extends RuntimeException {
 

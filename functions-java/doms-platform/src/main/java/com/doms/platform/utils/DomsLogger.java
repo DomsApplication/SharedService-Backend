@@ -1,4 +1,4 @@
-package com.doms.authentication.utils;
+package com.doms.platform.utils;
 
 
 import com.amazonaws.services.lambda.runtime.Context;

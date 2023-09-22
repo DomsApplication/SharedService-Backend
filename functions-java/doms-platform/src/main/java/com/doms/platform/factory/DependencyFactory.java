@@ -1,4 +1,4 @@
-package com.doms.authentication.factory;
+package com.doms.platform.factory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
