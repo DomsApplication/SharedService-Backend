@@ -21,9 +21,9 @@ Globals:
     Runtime: nodejs18.x
     Tracing: Active
     Architectures: 
-      - arm64
-    MemorySize: 512
-    Timeout: 60
+      - x86_64
+    MemorySize: 128
+    Timeout: 10
 
 Resources:
   # <<<<<<< {{LAMBDA FUNCTION}} authentication >>>>>>>>>>>
