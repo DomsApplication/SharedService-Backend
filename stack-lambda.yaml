@@ -18,6 +18,11 @@ Parameters:
 
 Globals:
   Function:
+    Environment:
+      # # Environment variables used by every function
+      Variables:
+        NODE_OPTIONS: --enable-source-maps
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
     Runtime: nodejs18.x
     Tracing: Active
     Architectures: 

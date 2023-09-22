@@ -1,43 +1,20 @@
-'use strict';
-console.log('Loading hello world function');
- 
-export const handler = async (event) => {
-    let name = "you";
-    let city = 'World';
-    let time = 'day';
-    let day = '';
+import { Context, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import 'source-map-support/register';
+
+export const handler = async (event, context) => {
+    console.log('authentication REQUEST::' + JSON.stringify(event, undefined, 2));
+
+    console.log('RemainingTime::' + context.getRemainingTimeInMillis());
+    console.log('functionName::' + context.functionName);
+    console.log('context::' + JSON.stringify(context));
+
     let responseCode = 200;
-    console.log("request: " + JSON.stringify(event));
-    
-    if (event.queryStringParameters && event.queryStringParameters.name) {
-        console.log("Received name: " + event.queryStringParameters.name);
-        name = event.queryStringParameters.name;
-    }
-    
-    if (event.queryStringParameters && event.queryStringParameters.city) {
-        console.log("Received city: " + event.queryStringParameters.city);
-        city = event.queryStringParameters.city;
-    }
-    
-    if (event.headers && event.headers['day']) {
-        console.log("Received day: " + event.headers.day);
-        day = event.headers.day;
-    }
-    
-    if (event.body) {
-        let body = JSON.parse(event.body)
-        if (body.time) 
-            time = body.time;
-    }
- 
-    let greeting = `Good ${time}, ${name} of ${city}.`;
-    if (day) greeting += ` Happy ${day}!`;
 
     let responseBody = {
-        message: greeting,
+        'lambda type': 'platform',
         input: event
     };
-    
+
     // The output from a Lambda proxy integration must be 
     // in the following JSON object. The 'headers' property 
     // is for custom response headers in addition to standard 
@@ -47,10 +24,11 @@ export const handler = async (event) => {
     let response = {
         statusCode: responseCode,
         headers: {
-            "x-custom-header" : "my custom header value"
+            "x-custom-header": "my custom header value"
         },
         body: JSON.stringify(responseBody)
     };
     console.log("response: " + JSON.stringify(response))
     return response;
 };
+
