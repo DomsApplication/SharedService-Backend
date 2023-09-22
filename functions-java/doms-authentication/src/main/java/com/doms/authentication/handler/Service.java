@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import software.amazon.awssdk.http.HttpStatusCode;
 
+import java.io.IOException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
@@ -41,7 +42,7 @@ public class Service {
         }
         try {
             DomsLogger.log("PAYLOAD", payload);
-            LoginRequest loginRequest = objectMapper.convertValue(payload, LoginRequest.class);
+            LoginRequest loginRequest = objectMapper.readValue(payload, LoginRequest.class);
             DomsLogger.log("LoginRequest", loginRequest.toString());
             if (loginRequest.getUsername().equals("ADMIN")) {
                 DomsLogger.log("LoginRequest/1");
@@ -60,7 +61,7 @@ public class Service {
                         .body("The user " + loginRequest.getUsername() + " not exists.")
                         .build();
             }
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IOException e) {
             DomsLogger.log("EXCEPTION in GET TOKEN method", e);
             return ResponseEvent.builder()
                     .statusCode(HttpStatusCode.BAD_REQUEST)
