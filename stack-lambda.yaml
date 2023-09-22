@@ -1,0 +1,162 @@
+#############################################################################################################################################################
+# {lambda}                                     
+# More info about Function Resource: 
+# https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+#############################################################################################################################################################
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  deploy the serverless microservice: complete funcation base lambda function:
+
+Parameters:
+  StackName:
+    Type: String
+    Description: "this is organization profile "
+  DataSourceName:
+    Type: String
+    Description: "DynamoDB table for serverless microserive architecture for DOMS product (Data Object Modeling)"
+
+Globals:
+  Function:
+    Runtime: nodejs18.x
+    Tracing: Active
+    Architectures: 
+      - arm64
+    MemorySize: 512
+    Timeout: 60
+
+Resources:
+  # <<<<<<< {{LAMBDA FUNCTION}} authentication >>>>>>>>>>>
+  authenticationFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions-nodejs/authentication
+      Handler: index.handler
+      Role: !GetAtt AuthenticationLambdaExecutionRole.Arn
+
+  # <<<<<<< {{LAMBDA FUNCTION}} authorization >>>>>>>>>>>
+  authorizationFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions-nodejs/authorization
+      Handler: index.handler
+      Role: !GetAtt AuthorizationLambdaExecutionRole.Arn
+
+  # <<<<<<< {{LAMBDA FUNCTION}} platform  >>>>>>>>>>>
+  platformFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions-nodejs/platform
+      Handler: index.handler
+      Role: !GetAtt PlatformLambdaExecutionRole.Arn
+        
+
+  # <<<<<<< {{ROLE}} Authentication lambda execution role  >>>>>>>>>>>    
+  AuthenticationLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+
+  # <<<<<<<  {{ROLE}} Authorization lambda execution role >>>>>>>>>>>    
+  AuthorizationLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+
+  # <<<<<<<  {{ROLE}} Platform lambda execution role >>>>>>>>>>>    
+  PlatformLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+
+  # <<<<<<<  {{POLICY}} Basic Lambda execution policy >>>>>>>>>>>
+  LambdaBasicExecutionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: LambdaBasicExecution
+      Roles:
+        - !Ref AuthenticationLambdaExecutionRole
+        - !Ref AuthorizationLambdaExecutionRole
+        - !Ref PlatformLambdaExecutionRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: CreateLogGroup
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+            Resource:
+              - "*"
+          - Sid: WriteLogStreamsAndGroups
+            Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - "*"
+
+  # <<<<<<<  {{POLICY}} DynamoDB Full Access >>>>>>>>>>>
+  LambdaDynamoDBPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: LambdaDynamoDBFullAccess
+      Roles:
+        - !Ref AuthenticationLambdaExecutionRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: DynamoDBFullAccess
+            Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:GetRecords
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${StackName}-${DataSourceName}
+
+
+#############################################################################################################################################################
+# {output}     
+# More info about Output: 
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+#############################################################################################################################################################
+Outputs:
+  AuthenticationFunctionArn:
+    Description: "Authentication Lambda funcation ARN value"
+    Value: !GetAtt authenticationFunction.Arn
+    Export:
+      Name: AuthenticationFunctionArn
+  AuthorizationFunctionArn:
+    Description: "Authentication Lambda funcation ARN value"
+    Value: !GetAtt authorizationFunction.Arn
+    Export:
+      Name: AuthorizationFunctionArn
+  PlatformFunctionArn:
+    Description: "Platform Lambda funcation ARN value"
+    Value: !GetAtt platformFunction.Arn
+    Export:
+      Name: PlatformFunctionArn
+
