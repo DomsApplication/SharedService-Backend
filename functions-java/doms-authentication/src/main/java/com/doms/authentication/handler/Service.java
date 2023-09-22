@@ -61,7 +61,7 @@ public class Service {
                         .body("The user " + loginRequest.getUsername() + " not exists.")
                         .build();
             }
-        } catch (IllegalArgumentException | IOException e) {
+        } catch (IllegalArgumentException | IOException | DomsLambdaException e) {
             DomsLogger.log("EXCEPTION in GET TOKEN method", e);
             return ResponseEvent.builder()
                     .statusCode(HttpStatusCode.BAD_REQUEST)
