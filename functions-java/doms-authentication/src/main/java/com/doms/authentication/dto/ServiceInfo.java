@@ -13,8 +13,6 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServiceInfo {
 
-    private String serviceName;
-
     private String awsRequestId;
 
     private String funcationName;
