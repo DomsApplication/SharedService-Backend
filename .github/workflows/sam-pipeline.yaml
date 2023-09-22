@@ -40,8 +40,8 @@ on:
         type: string
         default: 'aws-sam-cli-managed-default-doms-projects-001'
 
-  pull_request:
-    branches: [ main ]
+#  pull_request:
+#    branches: [ main ]
 #   push:
 #     branches: [ main ]
 
