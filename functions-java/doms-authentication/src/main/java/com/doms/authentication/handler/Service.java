@@ -15,7 +15,6 @@ import software.amazon.awssdk.http.HttpStatusCode;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.TimeZone;
 
 public class Service {
 
