@@ -1,29 +1,30 @@
 package com.doms.authentication;
 
+import com.amazonaws.HttpMethod;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.doms.authentication.dto.ResponseEvent;
+import com.doms.authentication.exception.DomsLambdaException;
 import com.doms.authentication.factory.DependencyFactory;
+import com.doms.authentication.handler.Service;
 import com.doms.authentication.utils.DomsLogger;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import software.amazon.awssdk.http.HttpStatusCode;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public class App implements RequestHandler<APIGatewayProxyRequestEvent, ResponseEvent> {
 
     private final ObjectMapper objectMapper;
+
+    private final Service service;
 
     /**
      * This is the main constructor for real working.
      */
     public App() {
         objectMapper = DependencyFactory.objectMapperInstance();
+        service = new Service();
     }
 
     /**
@@ -31,48 +32,34 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
      *
      * @param objectMapper
      */
-    App(ObjectMapper objectMapper) {
+    App(ObjectMapper objectMapper, Service service) {
         this.objectMapper = objectMapper;
+        this.service = service;
     }
 
 
     @Override
-    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent proxyRequestEvent, Context context) {
+    public ResponseEvent handleRequest(APIGatewayProxyRequestEvent proxyRequestEvent, Context context) {
         DomsLogger.setLoggerApi(context);
-        APIGatewayProxyResponseEvent apiGatewayProxyResponseEvent = new APIGatewayProxyResponseEvent();
+        ResponseEvent responseEvent = null;
         try {
-            DomsLogger.log("HTTP METHOD:::", proxyRequestEvent.getHttpMethod());
-            DomsLogger.log("PATH:::", proxyRequestEvent.getPath());
-            DomsLogger.log("PATH PARAMETERS:::", proxyRequestEvent.getPathParameters().toString());
-            DomsLogger.log("QUERY PARAMETERS:::", proxyRequestEvent.getQueryStringParameters().toString());
-            DomsLogger.log("HEADERS:::", proxyRequestEvent.getHeaders().toString());
-            DomsLogger.log("VERSION:::", proxyRequestEvent.getVersion());
+            if (proxyRequestEvent.getPath().equals("/auth/token")
+                    && proxyRequestEvent.getHttpMethod().equals(HttpMethod.POST.toString())) {
+                responseEvent = this.service.getToken(proxyRequestEvent.getBody(), objectMapper);
 
-            String requestString = proxyRequestEvent.getBody();
-            JSONParser parser = new JSONParser();
-            JSONObject requestJsonObject = (JSONObject) parser.parse(requestString);
-            String requestMessage = null;
-            String responseMessage = null;
-            if (requestJsonObject != null) {
-                if (requestJsonObject.get("requestMessage") != null) {
-                    requestMessage = requestJsonObject.get("requestMessage").toString();
-                }
+            } else if (proxyRequestEvent.getPath().equals("/auth/info")
+                    && proxyRequestEvent.getHttpMethod().equals(HttpMethod.GET.toString())) {
+                responseEvent = this.service.getServiceInfo(context, objectMapper);
+
+            } else {
+                responseEvent = ResponseEvent.builder().statusCode(HttpStatusCode.BAD_REQUEST)
+                        .body("Invalid request : " + proxyRequestEvent.getPath()).build();
             }
-
-            Map<String, String> responseBody = new HashMap<String, String>();
-            responseBody.put("responseMessage", requestMessage);
-            responseMessage = new JSONObject(responseBody).toJSONString();
-
-            apiGatewayProxyResponseEvent.setHeaders(
-                    Collections.singletonMap("timeStamp", String.valueOf(System.currentTimeMillis())));
-            apiGatewayProxyResponseEvent.setStatusCode(200);
-            apiGatewayProxyResponseEvent.setBody(requestMessage);
-            return apiGatewayProxyResponseEvent;
-        } catch (ParseException e) {
-            e.printStackTrace();
-            apiGatewayProxyResponseEvent.setStatusCode(200);
-            apiGatewayProxyResponseEvent.setBody(e.getLocalizedMessage());
-            return apiGatewayProxyResponseEvent;
+        } catch (JsonProcessingException | DomsLambdaException e) {
+            DomsLogger.log("EXCEPTION in MAIN HANDLER", e);
+            responseEvent = ResponseEvent.builder().statusCode(HttpStatusCode.INTERNAL_SERVER_ERROR)
+                    .body(e.getLocalizedMessage()).build();
         }
+        return responseEvent;
     }
 }
