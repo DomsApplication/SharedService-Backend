@@ -18,13 +18,6 @@ Parameters:
 
 Globals:
   Function:
-    Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
-      Variables:
-        JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1 # More info about tiered compilation https://aws.amazon.com/blogs/compute/optimizing-aws-lambda-function-performance-for-java/
-    AutoPublishAlias: live
-    SnapStart:
-      ApplyOn: PublishedVersions
-    Runtime: java11
     Tracing: Active
     Architectures:
       - x86_64
@@ -39,11 +32,6 @@ Resources:
       CodeUri: ../functions-nodejs/doms-authentication
       Handler: index.handler
       Runtime: nodejs18.x
-      Tracing: Active
-      Architectures: 
-        - arm64
-      MemorySize: 128
-      Timeout: 5
       Role: !GetAtt AuthenticationLambdaExecutionRole.Arn
 
   # <<<<<<< {{LAMBDA FUNCTION}} authorization >>>>>>>>>>>
@@ -53,11 +41,6 @@ Resources:
       CodeUri: ../functions-nodejs/doms-authorization
       Handler: index.handler
       Runtime: nodejs18.x
-      Tracing: Active
-      Architectures: 
-        - arm64
-      MemorySize: 128
-      Timeout: 5
       Role: !GetAtt AuthorizationLambdaExecutionRole.Arn
 
   # <<<<<<< {{LAMBDA FUNCTION}} platform write >>>>>>>>>>>
@@ -67,11 +50,6 @@ Resources:
       CodeUri: ../functions-nodejs/doms-platform-write
       Handler: index.handler
       Runtime: nodejs18.x
-      Tracing: Active
-      Architectures: 
-        - arm64
-      MemorySize: 128
-      Timeout: 5
       Role: !GetAtt PlatformWriteLambdaExecutionRole.Arn
 
   # <<<<<<< {{LAMBDA FUNCTION}} metadata >>>>>>>>>>>
@@ -81,11 +59,6 @@ Resources:
       CodeUri: ../functions-nodejs/doms-metadata
       Handler: index.handler
       Runtime: nodejs18.x
-      Tracing: Active
-      Architectures: 
-        - arm64
-      MemorySize: 128
-      Timeout: 5
       Role: !GetAtt metadataLambdaExecutionRole.Arn
 
   # <<<<<<< {{LAMBDA FUNCTION}} repository >>>>>>>>>>>
@@ -95,11 +68,6 @@ Resources:
       CodeUri: ../functions-nodejs/doms-repository
       Handler: index.handler
       Runtime: nodejs18.x
-      Tracing: Active
-      Architectures: 
-        - arm64
-      MemorySize: 128
-      Timeout: 5
       Role: !GetAtt repositoryLambdaExecutionRole.Arn
 
 
