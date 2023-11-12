@@ -1,0 +1,294 @@
+#############################################################################################################################################################
+# {lambda}
+# More info about Function Resource:
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-function.html
+#############################################################################################################################################################
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  deploy the serverless microservice: complete funcation base lambda function:
+
+Parameters:
+  DomsRepoBucketName:
+    Type: String
+    Description: "Common s3 bucket for DOMS application"
+  DataSourceTableName:
+    Type: String
+    Description: "DynamoDB service name for data repository with all tenant base"
+
+Globals:
+  Function:
+    Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+      Variables:
+        JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1 # More info about tiered compilation https://aws.amazon.com/blogs/compute/optimizing-aws-lambda-function-performance-for-java/
+    AutoPublishAlias: live
+    SnapStart:
+      ApplyOn: PublishedVersions
+    Runtime: java11
+    Tracing: Active
+    Architectures:
+      - x86_64
+    MemorySize: 128
+    Timeout: 10
+
+Resources:
+  # <<<<<<< {{LAMBDA FUNCTION}} authentication >>>>>>>>>>>
+  authenticationFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: ../functions-nodejs/doms-authentication
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Tracing: Active
+      Architectures: 
+        - arm64
+      MemorySize: 128
+      Timeout: 5
+      Role: !GetAtt AuthenticationLambdaExecutionRole.Arn
+
+  # <<<<<<< {{LAMBDA FUNCTION}} authorization >>>>>>>>>>>
+  authorizationFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: ../functions-nodejs/doms-authorization
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Tracing: Active
+      Architectures: 
+        - arm64
+      MemorySize: 128
+      Timeout: 5
+      Role: !GetAtt AuthorizationLambdaExecutionRole.Arn
+
+  # <<<<<<< {{LAMBDA FUNCTION}} platform write >>>>>>>>>>>
+  platformWriteFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: ../functions-nodejs/doms-platform-write
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Tracing: Active
+      Architectures: 
+        - arm64
+      MemorySize: 128
+      Timeout: 5
+      Role: !GetAtt PlatformWriteLambdaExecutionRole.Arn
+
+  # <<<<<<< {{LAMBDA FUNCTION}} metadata >>>>>>>>>>>
+  metadataFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: ../functions-nodejs/doms-metadata
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Tracing: Active
+      Architectures: 
+        - arm64
+      MemorySize: 128
+      Timeout: 5
+      Role: !GetAtt metadataLambdaExecutionRole.Arn
+
+  # <<<<<<< {{LAMBDA FUNCTION}} repository >>>>>>>>>>>
+  repositoryFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: ../functions-nodejs/doms-repository
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Tracing: Active
+      Architectures: 
+        - arm64
+      MemorySize: 128
+      Timeout: 5
+      Role: !GetAtt repositoryLambdaExecutionRole.Arn
+
+
+  # <<<<<<< {{ROLE}} Authentication lambda execution role  >>>>>>>>>>>    
+  AuthenticationLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+
+  # <<<<<<<  {{ROLE}} Authorization lambda execution role >>>>>>>>>>>    
+  AuthorizationLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+
+  # <<<<<<<  {{ROLE}} Platform write lambda execution role >>>>>>>>>>>    
+  PlatformWriteLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+
+  # <<<<<<<  {{ROLE}} metadata lambda execution role >>>>>>>>>>>    
+  metadataLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+
+  # <<<<<<<  {{ROLE}} repository lambda execution role >>>>>>>>>>>    
+  repositoryLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+
+  # <<<<<<<  {{POLICY}} Basic Lambda execution policy >>>>>>>>>>>
+  LambdaBasicExecutionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: LambdaBasicExecution
+      Roles:
+        - !Ref AuthenticationLambdaExecutionRole
+        - !Ref AuthorizationLambdaExecutionRole
+        - !Ref PlatformWriteLambdaExecutionRole
+        - !Ref metadataLambdaExecutionRole
+        - !Ref repositoryLambdaExecutionRole                
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: CreateLogGroup
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+            Resource:
+              - "*"
+          - Sid: WriteLogStreamsAndGroups
+            Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - "*"
+
+  # <<<<<<<  {{POLICY}} DynamoDB Full Access >>>>>>>>>>>
+  LambdaDynamoDBPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: LambdaDynamoDBAccess
+      Roles:
+        - !Ref repositoryLambdaExecutionRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: DynamoDBAccess
+            Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:GetRecords
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DataSourceTableName}
+
+  # <<<<<<<  {{POLICY}} S3 bucket Full Access >>>>>>>>>>>
+  LambdaS3BucketPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: LambdaS3BucketAccess
+      Roles:
+        - !Ref metadataLambdaExecutionRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: S3BucketAccess
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:ListBucket
+              - s3:GetObjectVersion
+              - s3:PutObjectAcl
+              - s3:PutLifecycleConfiguration
+              - s3:GetLifecycleConfiguration
+              - s3:DeleteObject
+              - s3:GetBucketLocation
+            Resource:
+              - !Sub arn:aws:s3:::${DomsRepoBucketName}
+              - !Sub arn:aws:s3:::${DomsRepoBucketName}/*              
+
+
+#############################################################################################################################################################
+# {output}     
+# More info about Output: 
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+#############################################################################################################################################################
+Outputs:
+  AuthenticationFunctionArn:
+    Value: !GetAtt authenticationFunction.Arn
+    Export:
+      Name: AuthenticationFunctionArn
+  AuthenticationFunctionName:
+    Value: !Ref authenticationFunction
+    Export:
+      Name: AuthenticationFunctionName
+
+  AuthorizationFunctionArn:
+    Value: !GetAtt authorizationFunction.Arn
+    Export:
+      Name: AuthorizationFunctionArn
+  AuthorizationFunctionName:
+    Value: !Ref authorizationFunction
+    Export:
+      Name: AuthorizationFunctionName
+
+  platformWriteFunctionArn:
+    Value: !GetAtt platformWriteFunction.Arn
+    Export:
+      Name: platformWriteFunctionArn
+  platformWriteFunctionName:
+    Value: !Ref platformWriteFunction
+    Export:
+      Name: platformWriteFunctionName
+
+  metadataFunctionArn:
+    Value: !GetAtt metadataFunction.Arn
+    Export:
+      Name: metadataFunctionArn
+  metadataFunctionName:
+    Value: !Ref metadataFunction
+    Export:
+      Name: metadataFunctionName
+
+  repositoryFunctionArn:
+    Value: !GetAtt repositoryFunction.Arn
+    Export:
+      Name: repositoryFunctionArn
+  repositoryFunctionName:
+    Value: !Ref repositoryFunction
+    Export:
+      Name: repositoryFunctionName

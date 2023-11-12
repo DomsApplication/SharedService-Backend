@@ -1,3 +1,8 @@
+#############################################################################################################################################################
+# {AWS SAM template}
+# More info about Function Resource:
+# https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+#############################################################################################################################################################
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
@@ -35,45 +40,54 @@ Parameters:
     Default: "shavika-service"
     Description: "Tag-ProductVersion"
 
-  DataSourceName:
-    Type: String
-    Default: "doms"
-    Description: "DynamoDB user management table with all tenant base"
-
 Resources:
 
+  # ********************** S3 Stack ****************** #
+  S3Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: stack-s3.yaml
+      Parameters:
+        StackName: !Ref StackName
+      Tags:
+        - Key: Name
+          Value: S3Stack
+
+  # ********************** DynamoDB Stack ****************** #
   DataSourceStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: ./stack-datasource.yaml
+      TemplateURL: stack-datasource.yaml
       Parameters:
         StackName: !Ref StackName
-        DataSourceName: !Ref DataSourceName
       Tags:
         - Key: Name
           Value: DataSourceStack
 
+  # ********************** Lambda Stack ****************** #
   LambdaStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: ./stack-lambda.yaml
+      TemplateURL: stack-lambda.yaml
       Parameters:
-        StackName: !Ref StackName
-        DataSourceName: !Ref DataSourceName
+        DomsRepoBucketName: !GetAtt S3Stack.Outputs.DomsRepoBucketName
+        DataSourceTableName: !GetAtt DataSourceStack.Outputs.DataSourceTableName
       Tags:
         - Key: Name
           Value: LambdaStack
 
+  # ********************** ApiGatway Stack ****************** #
   ApiGatewayStack:
     Type: AWS::CloudFormation::Stack
     DependsOn:
       - LambdaStack
     Properties:
-      TemplateURL: ./stack-api-gateway.yaml
+      TemplateURL: stack-api-gateway.yaml
       Parameters:
+        StackName: !Ref StackName
         AuthenticationFunctionArn: !GetAtt LambdaStack.Outputs.AuthenticationFunctionArn
         AuthorizationFunctionArn: !GetAtt LambdaStack.Outputs.AuthorizationFunctionArn
-        PlatformFunctionArn: !GetAtt LambdaStack.Outputs.PlatformFunctionArn
+        PlatformWriteFunctionArn: !GetAtt LambdaStack.Outputs.platformWriteFunctionArn
       Tags:
         - Key: Name
           Value: ApiGatewayStack
