@@ -17,11 +17,11 @@ on:
         type: string
         default: '17'
 
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-    paths: ['functions-java/**']
+#  push:
+#    branches: [ main ]
+#  pull_request:
+#    branches: [ main ]
+#    paths: ['functions-java/**']
 
 jobs:
 

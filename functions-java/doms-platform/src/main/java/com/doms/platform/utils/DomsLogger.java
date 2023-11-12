@@ -1,4 +1,4 @@
-package com.doms.authentication.utils;
+package com.doms.platform.utils;
 
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -14,9 +14,6 @@ public class DomsLogger {
     private static String requestId = "********-****-****-****-************";
 
     public static void setLoggerApi(Context context) {
-        if (null == context) {
-            return;
-        }
         logger = context.getLogger();
         requestId = (null != context.getAwsRequestId()) ? context.getAwsRequestId() : requestId;
     }

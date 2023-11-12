@@ -4,10 +4,10 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.doms</groupId>
-    <artifactId>doms-authentication</artifactId>
+    <artifactId>doms-authorization</artifactId>
     <version>2023.1.0.0</version>
     <packaging>jar</packaging>
-    <name>DOMS project Authentication service</name>
+    <name>DOMS project Authorization service</name>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

@@ -1,5 +1,4 @@
-package com.doms.authentication.dto;
-
+package com.doms.authorization.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,8 +12,15 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @SuperBuilder
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class RequestEvent {
-    @JsonProperty("requestId")
-    private String requestId;
+public class TokenAuthorizerContext {
+
+    @JsonProperty("type")
+    private String type;
+
+    @JsonProperty("authorizationToken")
+    private String authorizationToken;
+
+    @JsonProperty("methodArn")
+    private String methodArn;
 
 }
