@@ -106,7 +106,7 @@ Resources:
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
           - lambdaArn: !Ref AuthenticationFunctionArn
         PassthroughBehavior: WHEN_NO_MATCH
-        TimeoutInMillis: 30000  
+        TimeoutInMillis: 29000  
       OperationName: 'auth lambda function'
       ResourceId: !Ref authProxyResource
       RestApiId: !Ref restApiGateway
@@ -149,7 +149,7 @@ Resources:
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
           - lambdaArn: !Ref PlatformWriteFunctionArn
         PassthroughBehavior: WHEN_NO_MATCH
-        TimeoutInMillis: 30000  
+        TimeoutInMillis: 29000  
       OperationName: 'platform lambda function'
       ResourceId: !Ref platformProxyResource
       RestApiId: !Ref restApiGateway
