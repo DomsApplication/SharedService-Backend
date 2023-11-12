@@ -19,16 +19,11 @@ on:
         required: false
         type: string
         default: '.'
-      # sam version
-      sam-version:
-        required: false
-        type: string
-        default: '1.71.0'
       # sam template
       sam-template:
         required: false
         type: string
-        default: 'template.yaml'
+        default: './aws-sam-template/template.yaml'
       # stack name
       stack-name:
         required: true
@@ -100,7 +95,6 @@ jobs:
         run: |
           echo environment          : ${{ inputs.env || 'dev' }}
           echo working_directory    : ${{ inputs.working-directory }}
-          echo SAM version          : ${{ inputs.sam-version }}
           echo stack-name           : ${{ inputs.stack-name }}
           echo sam-template         : ${{ inputs.sam-template }}
           echo artifacts-bucket     : ${{ inputs.artifacts-bucket }}
@@ -108,17 +102,19 @@ jobs:
 
       # SAM template validate
       - name: Template Validate
-        run: sam validate
+        run: sam validate --template ${{ inputs.sam-template }}
 
       # Build inside Docker containers
       - name: Build resources
         run: sam build --template ${{ inputs.sam-template }} --use-container
 
+      # Set project version  
       - name: Set project version as environment variable
         run: |
           cd ${{ inputs.working-directory }}
           echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
 
+      # Upload artifact to s3
       - name: Upload artifacts to artifact bucket
         run: |
           if ! aws s3 ls s3://${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} &> /dev/null ; then
@@ -127,6 +123,7 @@ jobs:
             echo "=======> Bucket created with the name of :" ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }}
           fi
           sam package \
+            --template ${{ inputs.sam-template }} \
             --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
             --region ${{ secrets.AWS_REGION }} \
             --output-template-file packaged.yaml
@@ -136,7 +133,7 @@ jobs:
         run: |
           sam deploy --stack-name ${{ inputs.stack-name }} \
             --template packaged.yaml \
-            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
             --region ${{ secrets.AWS_REGION }} \
             --s3-bucket ${{ inputs.artifacts-bucket }}-${{ inputs.env || 'dev' }} \
             --no-fail-on-empty-changeset \

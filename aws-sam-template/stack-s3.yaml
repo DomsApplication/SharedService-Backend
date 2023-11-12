@@ -1,0 +1,38 @@
+#############################################################################################################################################################
+# {Rest api-gatway}             
+# More info about Function Resource: 
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-s3-bucket.html                        
+#############################################################################################################################################################
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  file / document store repository:
+
+Parameters:
+  StackName:
+    Type: String
+
+Resources:
+  # <<<<<<< Doms Applicaion stroage media >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  DomsRepoBucket:
+  Type: AWS::S3::Bucket
+  Properties:
+    BucketName: !Join [ "-", [!Ref StackName, !Ref AWS::AccountId, "doms-repo"]]
+
+#############################################################################################################################################################
+# {output}
+# More info about Output:
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+#############################################################################################################################################################
+Outputs:
+  DomsRepoBucketArn:
+    Description: "Doms application storage media ARN value"
+    Value: !GetAtt DomsBucket.Arn
+    Export:
+      Name: DomsRepoBucketArn
+  DomsRepoBucketName:
+    Description: "Doms application storage media name"
+    Value: !Ref DomsBucket
+    Export:
+      Name: DomsRepoBucketName
+

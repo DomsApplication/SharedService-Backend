@@ -1,6 +1,6 @@
 #############################################################################################################################################################
-# {dynamodb}             
-# More info about Function Resource: 
+# {dynamodb}
+# More info about Function Resource:
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dynamodb-table.html
 #############################################################################################################################################################
 AWSTemplateFormatVersion: '2010-09-09'
@@ -11,14 +11,14 @@ Description: >
 Parameters:
   StackName:
     Type: String
-    Description: "this is organization profile "
   DataSourceName:
     Type: String
-    Description: "DynamoDB table for user management with all tenant base"
+    Default: "doms"
+    Description: "DynamoDB service name for data repository with all tenant base"
 
 Resources:
   # <<<<<<<  {{DYNAMODB}} DynamoDB table for serverless microserive architecture for DOMS product (Data Object Modeling) >>>>>>>>>>>
-  DataSourceDynamoDBTable:
+  DataSourceTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     Properties:
@@ -88,8 +88,12 @@ Resources:
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
 #############################################################################################################################################################
 Outputs:
-  DataSourceDynamoDBTableArn:
-    Description: "DynamoDB table for serverless microserive architecture for DOMS product (Data Object Modeling)"
-    Value: !GetAtt DataSourceDynamoDBTable.Arn
+  DataSourceTableArn:
+    Value: !GetAtt DataSourceTable.Arn
     Export:
-      Name: DataSourceDynamoDBTableArn
+      Name: DataSourceTableArn
+  DataSourceTableName:
+    Value: !Ref DataSourceTable
+    Export:
+      Name: DataSourceTableName
+

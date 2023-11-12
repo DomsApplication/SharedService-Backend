@@ -23,7 +23,7 @@ Parameters:
   AuthorizationFunctionArn:
     Type: String  
     Description : Arn Id for Authorization Lambda Function
-  PlatformFunctionArn:
+  PlatformWriteFunctionArn:
     Type: String  
     Description : Arn Id for Platform Lambda Function
 
@@ -106,7 +106,7 @@ Resources:
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
           - lambdaArn: !Ref AuthenticationFunctionArn
         PassthroughBehavior: WHEN_NO_MATCH
-        TimeoutInMillis: 29000  
+        TimeoutInMillis: 30000  
       OperationName: 'auth lambda function'
       ResourceId: !Ref authProxyResource
       RestApiId: !Ref restApiGateway
@@ -120,7 +120,7 @@ Resources:
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/auth/{proxy+}
 
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  # <<<<<<< resource {/platform} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  # <<<<<<< resource {/platform write} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   platformRootResource:  
     Type: AWS::ApiGateway::Resource
@@ -147,9 +147,9 @@ Resources:
         Type: AWS_PROXY
         Uri: !Sub
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
-          - lambdaArn: !Ref PlatformFunctionArn
+          - lambdaArn: !Ref PlatformWriteFunctionArn
         PassthroughBehavior: WHEN_NO_MATCH
-        TimeoutInMillis: 29000  
+        TimeoutInMillis: 30000  
       OperationName: 'platform lambda function'
       ResourceId: !Ref platformProxyResource
       RestApiId: !Ref restApiGateway
@@ -158,7 +158,7 @@ Resources:
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: "lambda:InvokeFunction"
-      FunctionName: !Ref PlatformFunctionArn
+      FunctionName: !Ref PlatformWriteFunctionArn
       Principal: "apigateway.amazonaws.com"
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/platform/{proxy+}
 
