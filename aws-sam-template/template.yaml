@@ -42,14 +42,14 @@ Parameters:
 
 Resources:
 
-  # ********************** S3 Stack ****************** #
-  S3Stack:
+  # ********************** DynamoDB Stack ****************** #
+  DataSourceStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: stack-s3.yaml
+      TemplateURL: stack-datasource.yaml
       Parameters:
         StackName: !Ref StackName
       Tags:
         - Key: Name
-          Value: S3Stack
+          Value: DataSourceStack
 
