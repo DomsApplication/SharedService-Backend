@@ -27,12 +27,12 @@ Resources:
 Outputs:
   DomsRepoBucketArn:
     Description: "Doms application storage media ARN value"
-    Value: !GetAtt DomsBucket.Arn
+    Value: !GetAtt DomsRepoBucket.Arn
     Export:
       Name: DomsRepoBucketArn
   DomsRepoBucketName:
     Description: "Doms application storage media name"
-    Value: !Ref DomsBucket
+    Value: !Ref DomsRepoBucket
     Export:
       Name: DomsRepoBucketName
 

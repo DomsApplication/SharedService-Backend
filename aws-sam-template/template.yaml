@@ -42,6 +42,16 @@ Parameters:
 
 Resources:
 
+  # ********************** S3 Stack ****************** #
+  S3Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: stack-s3.yaml
+      Parameters:
+        StackName: !Ref StackName
+      Tags:
+        - Key: Name
+          Value: S3Stack
 
   # ********************** DynamoDB Stack ****************** #
   DataSourceStack:
@@ -60,7 +70,7 @@ Resources:
     Properties:
       TemplateURL: stack-lambda.yaml
       Parameters:
-        DomsRepoBucketName: doms-repo
+        DomsRepoBucketName: !GetAtt S3Stack.Outputs.DomsRepoBucketName
         DataSourceTableName: !GetAtt DataSourceStack.Outputs.DataSourceTableName
       Tags:
         - Key: Name
