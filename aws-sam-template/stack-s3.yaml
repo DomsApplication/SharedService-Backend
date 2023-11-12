@@ -19,3 +19,20 @@ Resources:
   Properties:
     BucketName: !Join [ "-", [!Ref StackName, !Ref AWS::AccountId, "doms-repo"]]
 
+#############################################################################################################################################################
+# {output}
+# More info about Output:
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+#############################################################################################################################################################
+Outputs:
+  DomsRepoBucketArn:
+    Description: "Doms application storage media ARN value"
+    Value: !GetAtt DomsBucket.Arn
+    Export:
+      Name: DomsRepoBucketArn
+  DomsRepoBucketName:
+    Description: "Doms application storage media name"
+    Value: !Ref DomsBucket
+    Export:
+      Name: DomsRepoBucketName
+

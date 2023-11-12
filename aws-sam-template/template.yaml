@@ -42,6 +42,7 @@ Parameters:
 
 Resources:
 
+
   # ********************** DynamoDB Stack ****************** #
   DataSourceStack:
     Type: AWS::CloudFormation::Stack
@@ -53,3 +54,60 @@ Resources:
         - Key: Name
           Value: DataSourceStack
 
+  # ********************** Lambda Stack ****************** #
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: stack-lambda.yaml
+      Parameters:
+        DomsRepoBucketName: doms-repo
+        DataSourceTableName: !GetAtt DataSourceStack.Outputs.DataSourceTableName
+      Tags:
+        - Key: Name
+          Value: LambdaStack
+
+  # ********************** ApiGatway Stack ****************** #
+  ApiGatewayStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - LambdaStack
+    Properties:
+      TemplateURL: stack-api-gateway.yaml
+      Parameters:
+        StackName: !Ref StackName
+        AuthenticationFunctionArn: !GetAtt LambdaStack.Outputs.AuthenticationFunctionArn
+        AuthorizationFunctionArn: !GetAtt LambdaStack.Outputs.AuthorizationFunctionArn
+        PlatformWriteFunctionArn: !GetAtt LambdaStack.Outputs.platformWriteFunctionArn
+      Tags:
+        - Key: Name
+          Value: ApiGatewayStack
+
+
+#############################################################################################################################################################
+# {output}
+# More info about Output:
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+#############################################################################################################################################################
+Outputs:
+  AuthenticationFunctionArn:
+    Description: "Authentication Lambda funcation ARN value"
+    Value:
+      Fn::GetAtt: LambdaStack.Outputs.AuthenticationFunctionArn
+  AuthorizationFunctionArn:
+    Description: "Authorization Lambda funcation ARN value"
+    Value:
+      Fn::GetAtt: LambdaStack.Outputs.AuthorizationFunctionArn
+  PlatformFunctionArn:
+    Description: "Platform Lambda funcation ARN value"
+    Value:
+      Fn::GetAtt: LambdaStack.Outputs.PlatformFunctionArn
+
+  DataSourceDynamoDBTableArn:
+    Description: "DynamoDB table for serverless microserive architecture for DOMS product (Data Object Modeling)"
+    Value:
+      Fn::GetAtt: DataSourceStack.Outputs.DataSourceDynamoDBTableArn
+
+  RestApiEndPoint:
+    Description: "Application end point to access form public"
+    Value:
+      Fn::GetAtt: ApiGatewayStack.Outputs.RestApiEndPoint
