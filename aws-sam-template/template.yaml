@@ -102,10 +102,10 @@ Outputs:
     Value:
       Fn::GetAtt: LambdaStack.Outputs.PlatformFunctionArn
 
-  DataSourceDynamoDBTableArn:
+  DataSourceTableArn:
     Description: "DynamoDB table for serverless microserive architecture for DOMS product (Data Object Modeling)"
     Value:
-      Fn::GetAtt: DataSourceStack.Outputs.DataSourceDynamoDBTableArn
+      Fn::GetAtt: DataSourceStack.Outputs.DataSourceTableArn
 
   RestApiEndPoint:
     Description: "Application end point to access form public"
