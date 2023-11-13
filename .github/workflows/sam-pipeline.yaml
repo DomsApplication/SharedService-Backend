@@ -19,6 +19,11 @@ on:
         required: false
         type: string
         default: '.'
+      # sam version
+      sam-version:
+        required: false
+        type: string
+        default: '1.71.0'
       # sam template
       sam-template:
         required: false

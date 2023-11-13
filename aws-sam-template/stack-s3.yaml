@@ -15,9 +15,9 @@ Parameters:
 Resources:
   # <<<<<<< Doms Applicaion stroage media >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   DomsRepoBucket:
-  Type: AWS::S3::Bucket
-  Properties:
-    BucketName: !Join [ "-", [!Ref StackName, !Ref AWS::AccountId, "doms-repo"]]
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join [ "-", [!Ref StackName, !Ref AWS::AccountId, "doms-repo"]]
 
 #############################################################################################################################################################
 # {output}
@@ -27,12 +27,12 @@ Resources:
 Outputs:
   DomsRepoBucketArn:
     Description: "Doms application storage media ARN value"
-    Value: !GetAtt DomsBucket.Arn
+    Value: !GetAtt DomsRepoBucket.Arn
     Export:
       Name: DomsRepoBucketArn
   DomsRepoBucketName:
     Description: "Doms application storage media name"
-    Value: !Ref DomsBucket
+    Value: !Ref DomsRepoBucket
     Export:
       Name: DomsRepoBucketName
 
