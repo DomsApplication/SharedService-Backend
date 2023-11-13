@@ -53,15 +53,10 @@ def sendErrorResponse(statusCode, body, context):
 def genToken(event, context):
     logInfo('body/1', event['body'])
     if('body' not in event):
-        return sendErrorResponse(400, json.dumps({'message' : "Request body was missed. Kindly provide 'username' & 'password' in json format."}), context)
+        return sendErrorResponse(400, {'message' : "Request body was missed. Kindly provide 'username' & 'password' in json format."}, context)
 
     user = json.loads(event['body'])
-    logInfo('user', user)
 
-    if('username' not in user or 'password' not in user):    
-        return sendResponse(400, json.dumps({'message' : "Invalid Request. Kindly provide 'username' & 'password' in json format."}))
-    
-    logInfo('user/1', user)
     if(user['username'] != 'system' and user['password'] != 'Password1#'):
         return sendResponse(401, json.dumps({'message' : "invalid user credentials"}))
 

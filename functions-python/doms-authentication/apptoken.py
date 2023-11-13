@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-import jwt
+#import jwt
+import json
 from logger import logInfo, logError
 
 JWT_SECRET = 'secret'
@@ -12,7 +13,7 @@ def generateToken(username):
         'username': username,
         'exp': datetime.utcnow() + timedelta(seconds=JWT_EXP_DELTA_SECONDS)
     }
-    logInfo('payload', payload)
-    jwt_token = jwt.encode(payload, JWT_SECRET, JWT_ALGORITHM)
-    logInfo('jwt_token', jwt_token)
-    return  jwt_token.decode('utf-8')
+    #jwt_token = jwt.encode(payload, JWT_SECRET, JWT_ALGORITHM)
+    #return  jwt_token.decode('utf-8')
+    jwt_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE0NTQ4ODEwOTh9.POQjZyC6OtqlFjmzh5S8jKkxdM90PAvI4GHzTpKwIF4'
+    return jwt_token
