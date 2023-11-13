@@ -214,7 +214,7 @@ Resources:
       ResourceId: !Ref repoReadProxyResource
       RestApiId: !Ref restApiGateway
   # <<<<<<< read lambda API-execution-permissions for rest-api >>>>>>>>>>>
-  repoWriteLambdaApiGatewayInvoke:
+  repoReadLambdaApiGatewayInvoke:
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: "lambda:InvokeFunction"
