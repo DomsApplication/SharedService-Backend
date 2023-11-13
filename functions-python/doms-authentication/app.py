@@ -5,6 +5,7 @@ import json
 import uuid
 from datetime import datetime
 from logger import logInfo, logError
+from jwt import generateToken
 
 def lambda_handler(event, context):
     try:
@@ -16,17 +17,19 @@ def lambda_handler(event, context):
         logInfo('httpMethod', event['httpMethod'])
         logInfo('body', event['body'])
 
-        if('/token' in event['path'] and event['httpMethod'] == 'POST'):
-            msg = {'token' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE0NTQ4ODEwOTh9.POQjZyC6OtqlFjmzh5S8jKkxdM90PAvI4GHzTpKwIF4'}
-            return sendResponse(200, json.dumps(msg))
+        if(event['path'] == '/auth/token' and event['httpMethod'] == 'POST'):
+            return generateToken(event)
         else:
-            msg = {'message' : 'Requested path :' + event['path'] + ' and httpMethod:' + event['httpMethod'] + ' not allowed.'}
-            return sendResponse(405, json.dumps(msg))    
+            invalidRequest()
 
     except Exception as error:
         logError('Exception in main function', error)
         return sendResponse(500, str(error))
 
+
+
+
+### Send http response
 def sendResponse(statusCode, body):
     return {
         'statusCode': statusCode,
@@ -36,3 +39,30 @@ def sendResponse(statusCode, body):
             'Access-Control-Allow-Origin': '*'
         }
     }
+
+
+
+### Generate JWT token
+def generateToken(event):
+    if('body' not in event):
+        return sendResponse(400, json.dumps({'message' : "Request body was missed. Kindly provide 'username' & 'password' in json format."}))
+
+    user = json.loads(event['body'])
+
+    if('username' not in user or 'password' not in user):    
+        return sendResponse(400, json.dumps({'message' : "Invalid Request. Kindly provide 'username' & 'password' in json format."}))
+    
+    if(user['username'] != 'system' and user['username'] != 'Password1#'):
+        return sendResponse(401, json.dumps({'message' : "invalid user credentials"}))
+
+    token = generateToken(user['username'])
+    return sendResponse(200, json.dumps({'token' : token}))
+
+
+
+
+### Respond Invalid request
+def invalidRequest():
+    msg = {'message' : 'Requested path :' + event['path'] + ' and httpMethod:' + event['httpMethod'] + ' not allowed.'}
+    return sendResponse(405, json.dumps(msg))    
+
