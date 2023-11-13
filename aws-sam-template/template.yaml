@@ -87,7 +87,7 @@ Resources:
         StackName: !Ref StackName
         AuthenticationFunctionArn: !GetAtt LambdaStack.Outputs.AuthenticationFunctionArn
         AuthorizationFunctionArn: !GetAtt LambdaStack.Outputs.AuthorizationFunctionArn
-        PlatformWriteFunctionArn: !GetAtt LambdaStack.Outputs.platformWriteFunctionArn
+        repositoryFunctionArn: !GetAtt LambdaStack.Outputs.repositoryFunctionArn
       Tags:
         - Key: Name
           Value: ApiGatewayStack

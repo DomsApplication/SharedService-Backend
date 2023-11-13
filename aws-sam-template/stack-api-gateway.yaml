@@ -23,11 +23,13 @@ Parameters:
   AuthorizationFunctionArn:
     Type: String  
     Description : Arn Id for Authorization Lambda Function
-  PlatformWriteFunctionArn:
+  repositoryFunctionArn:
     Type: String  
-    Description : Arn Id for Platform Lambda Function
+    Description : Arn Id for Repository write Lambda Function
 
 Resources:
+  #
+  #
   # <<<<<<< rest-api-gateway >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   restApiGateway:
     Type: AWS::ApiGateway::RestApi
@@ -41,8 +43,9 @@ Resources:
   apiDeployment: 
     Type: AWS::ApiGateway::Deployment
     DependsOn: 
-      - platformMethod
       - authMethod
+      - repoWriteMethod
+      - repoReadMethod
     Properties:
       Description: Deploy the auth rest api
       RestApiId: !Ref restApiGateway
@@ -55,7 +58,9 @@ Resources:
       RestApiId: !Ref restApiGateway
       StageName: !Ref ApiGatewayStageName
 
-# <<<<<<< Lambda Token Authorizer >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  #
+  #
+  # <<<<<<< Lambda Token Authorizer >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   AuthorizersLambdaToken:
     Type: AWS::ApiGateway::Authorizer
     Properties:
@@ -120,23 +125,34 @@ Resources:
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/auth/{proxy+}
 
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  # <<<<<<< resource {/platform write} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  # <<<<<<< resource {/repo} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  platformRootResource:  
+  repoRootResource:  
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !GetAtt restApiGateway.RootResourceId
-      PathPart: 'platform'
+      PathPart: 'repo'
       RestApiId: !Ref restApiGateway
-  # <<<<<<< resource {/platform/{proxy+}} >>>>>>>>>>>
-  platformProxyResource:  
+
+  # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  # <<<<<<< resource {/repo/write} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  repoWriteRootResource:  
     Type: AWS::ApiGateway::Resource
     Properties:
-      ParentId: !Ref platformRootResource
+      ParentId: !Ref repoRootResource
+      PathPart: 'write'
+      RestApiId: !Ref restApiGateway
+  # <<<<<<< resource {/repo/write/{proxy+}} >>>>>>>>>>>
+  repoWriteProxyResource:  
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref repoWriteRootResource
       PathPart: '{proxy+}'
       RestApiId: !Ref restApiGateway
-  # <<<<<<< method {ANY} of {/platform/{proxy+}} lambda-proxy-integration >>>>>>>>>>>
-  platformMethod:  
+
+  # <<<<<<< method {ANY} of {/repo/write/{proxy+}} lambda-proxy-integration >>>>>>>>>>>
+  repoWriteMethod:  
     Type: AWS::ApiGateway::Method
     Properties:
       AuthorizationType: CUSTOM
@@ -147,20 +163,64 @@ Resources:
         Type: AWS_PROXY
         Uri: !Sub
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
-          - lambdaArn: !Ref PlatformWriteFunctionArn
+          - lambdaArn: !Ref repositoryFunctionArn
         PassthroughBehavior: WHEN_NO_MATCH
         TimeoutInMillis: 29000  
-      OperationName: 'platform lambda function'
-      ResourceId: !Ref platformProxyResource
+      OperationName: 'Repo write lambda function'
+      ResourceId: !Ref repoWriteProxyResource
       RestApiId: !Ref restApiGateway
-  # <<<<<<< platform lambda API-execution-permissions for rest-api >>>>>>>>>>>
-  platformLambdaApiGatewayInvoke:
+  # <<<<<<< repository lambda API-execution-permissions for rest-api >>>>>>>>>>>
+  repoWriteLambdaApiGatewayInvoke:
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: "lambda:InvokeFunction"
-      FunctionName: !Ref PlatformWriteFunctionArn
+      FunctionName: !Ref repositoryFunctionArn
       Principal: "apigateway.amazonaws.com"
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/platform/{proxy+}
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/repo/write/{proxy+}
+
+  # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  # <<<<<<< resource {/repo/read} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  repoReadRootResource:  
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref repoRootResource
+      PathPart: 'read'
+      RestApiId: !Ref restApiGateway
+  # <<<<<<< resource {/repo/read/{proxy+}} >>>>>>>>>>>
+  repoReadProxyResource:  
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref repoReadRootResource
+      PathPart: '{proxy+}'
+      RestApiId: !Ref restApiGateway
+
+  # <<<<<<< method {ANY} of {/repo/read/{proxy+}} lambda-proxy-integration >>>>>>>>>>>
+  repoReadMethod:  
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref AuthorizersLambdaToken
+      HttpMethod: ANY
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
+          - lambdaArn: !Ref repositoryFunctionArn
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000  
+      OperationName: 'Repo write lambda function'
+      ResourceId: !Ref repoReadProxyResource
+      RestApiId: !Ref restApiGateway
+  # <<<<<<< read lambda API-execution-permissions for rest-api >>>>>>>>>>>
+  repoWriteLambdaApiGatewayInvoke:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref repositoryFunctionArn
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/repo/read/{proxy+}
 
 #############################################################################################################################################################
 # {output}     

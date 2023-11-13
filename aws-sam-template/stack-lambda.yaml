@@ -25,41 +25,25 @@ Globals:
     Timeout: 10
 
 Resources:
+  #
+  #
   # <<<<<<< {{LAMBDA FUNCTION}} authentication >>>>>>>>>>>
   authenticationFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: ../functions-nodejs/doms-authentication
-      Handler: index.handler
-      Runtime: nodejs18.x
+      CodeUri: ../functions-python/doms-authentication
+      Handler: app.lambda_handler
+      Runtime: python3.11
       Role: !GetAtt AuthenticationLambdaExecutionRole.Arn
 
   # <<<<<<< {{LAMBDA FUNCTION}} authorization >>>>>>>>>>>
   authorizationFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: ../functions-nodejs/doms-authorization
-      Handler: index.handler
-      Runtime: nodejs18.x
+      CodeUri: ../functions-python/doms-authorization
+      Handler: app.lambda_handler
+      Runtime: python3.11
       Role: !GetAtt AuthorizationLambdaExecutionRole.Arn
-
-  # <<<<<<< {{LAMBDA FUNCTION}} platform write >>>>>>>>>>>
-  platformWriteFunction:
-    Type: AWS::Serverless::Function 
-    Properties:
-      CodeUri: ../functions-nodejs/doms-platform-write
-      Handler: index.handler
-      Runtime: nodejs18.x
-      Role: !GetAtt PlatformWriteLambdaExecutionRole.Arn
-
-  # <<<<<<< {{LAMBDA FUNCTION}} metadata >>>>>>>>>>>
-  metadataFunction:
-    Type: AWS::Serverless::Function 
-    Properties:
-      CodeUri: ../functions-nodejs/doms-metadata
-      Handler: index.handler
-      Runtime: nodejs18.x
-      Role: !GetAtt metadataLambdaExecutionRole.Arn
 
   # <<<<<<< {{LAMBDA FUNCTION}} repository >>>>>>>>>>>
   repositoryFunction:
@@ -70,7 +54,8 @@ Resources:
       Runtime: nodejs18.x
       Role: !GetAtt repositoryLambdaExecutionRole.Arn
 
-
+  #
+  #
   # <<<<<<< {{ROLE}} Authentication lambda execution role  >>>>>>>>>>>    
   AuthenticationLambdaExecutionRole:
     Type: "AWS::IAM::Role"
@@ -95,30 +80,6 @@ Resources:
               Service: lambda.amazonaws.com
             Action: "sts:AssumeRole"
 
-  # <<<<<<<  {{ROLE}} Platform write lambda execution role >>>>>>>>>>>    
-  PlatformWriteLambdaExecutionRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: "sts:AssumeRole"
-
-  # <<<<<<<  {{ROLE}} metadata lambda execution role >>>>>>>>>>>    
-  metadataLambdaExecutionRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: "sts:AssumeRole"
-
   # <<<<<<<  {{ROLE}} repository lambda execution role >>>>>>>>>>>    
   repositoryLambdaExecutionRole:
     Type: "AWS::IAM::Role"
@@ -131,6 +92,8 @@ Resources:
               Service: lambda.amazonaws.com
             Action: "sts:AssumeRole"
 
+  #
+  #
   # <<<<<<<  {{POLICY}} Basic Lambda execution policy >>>>>>>>>>>
   LambdaBasicExecutionPolicy:
     Type: AWS::IAM::Policy
@@ -139,8 +102,6 @@ Resources:
       Roles:
         - !Ref AuthenticationLambdaExecutionRole
         - !Ref AuthorizationLambdaExecutionRole
-        - !Ref PlatformWriteLambdaExecutionRole
-        - !Ref metadataLambdaExecutionRole
         - !Ref repositoryLambdaExecutionRole                
       PolicyDocument:
         Version: 2012-10-17
@@ -189,7 +150,7 @@ Resources:
     Properties:
       PolicyName: LambdaS3BucketAccess
       Roles:
-        - !Ref metadataLambdaExecutionRole
+        - !Ref repositoryLambdaExecutionRole
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -233,24 +194,6 @@ Outputs:
     Value: !Ref authorizationFunction
     Export:
       Name: AuthorizationFunctionName
-
-  platformWriteFunctionArn:
-    Value: !GetAtt platformWriteFunction.Arn
-    Export:
-      Name: platformWriteFunctionArn
-  platformWriteFunctionName:
-    Value: !Ref platformWriteFunction
-    Export:
-      Name: platformWriteFunctionName
-
-  metadataFunctionArn:
-    Value: !GetAtt metadataFunction.Arn
-    Export:
-      Name: metadataFunctionArn
-  metadataFunctionName:
-    Value: !Ref metadataFunction
-    Export:
-      Name: metadataFunctionName
 
   repositoryFunctionArn:
     Value: !GetAtt repositoryFunction.Arn
