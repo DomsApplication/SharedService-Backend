@@ -195,11 +195,11 @@ Outputs:
     Export:
       Name: AuthorizationFunctionName
 
-  repositoryFunctionArn:
+  RepositoryFunctionArn:
     Value: !GetAtt repositoryFunction.Arn
     Export:
-      Name: repositoryFunctionArn
-  repositoryFunctionName:
+      Name: RepositoryFunctionArn
+  RepositoryFunctionName:
     Value: !Ref repositoryFunction
     Export:
-      Name: repositoryFunctionName
+      Name: RepositoryFunctionName
