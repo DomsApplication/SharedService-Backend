@@ -5,6 +5,7 @@ import json
 import uuid
 from datetime import datetime
 from logger import logInfo, logError
+from apptoken import generateToken
 
 def lambda_handler(event, context):
     try:
@@ -16,18 +17,20 @@ def lambda_handler(event, context):
         logInfo('httpMethod', event['httpMethod'])
         logInfo('body', event['body'])
 
-        if('/token' in event['path'] and event['httpMethod'] == 'POST'):
-            msg = {'token' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE0NTQ4ODEwOTh9.POQjZyC6OtqlFjmzh5S8jKkxdM90PAvI4GHzTpKwIF4'}
-            return sendResponse(200, json.dumps(msg))
+        if(event['path'] == '/auth/token' and event['httpMethod'] == 'POST'):
+            return genToken(event, context)
         else:
-            msg = {'message' : 'Requested path :' + event['path'] + ' and httpMethod:' + event['httpMethod'] + ' not allowed.'}
-            return sendResponse(405, json.dumps(msg))    
+            invalidRequest(event)
 
     except Exception as error:
         logError('Exception in main function', error)
-        return sendResponse(500, str(error))
+        return sendErrorResponse(500, str(error), context)
 
-def sendResponse(statusCode, body):
+
+
+
+### Send http response
+def sendResponse(statusCode, body): 
     return {
         'statusCode': statusCode,
         'body': body,
@@ -36,3 +39,42 @@ def sendResponse(statusCode, body):
             'Access-Control-Allow-Origin': '*'
         }
     }
+
+### Send http response
+def sendErrorResponse(statusCode, body, context): 
+    response = {
+        'status': statusCode,
+        'errors': body
+    }
+    return context.fail(json.stringify(response));
+
+
+### Generate JWT token
+def genToken(event, context):
+    logInfo('body/1', event['body'])
+    if('body' not in event):
+        return sendErrorResponse(400, json.dumps({'message' : "Request body was missed. Kindly provide 'username' & 'password' in json format."}), context)
+
+    user = json.loads(event['body'])
+    logInfo('user', user)
+
+    if('username' not in user or 'password' not in user):    
+        return sendResponse(400, json.dumps({'message' : "Invalid Request. Kindly provide 'username' & 'password' in json format."}))
+    
+    logInfo('user/1', user)
+    if(user['username'] != 'system' and user['password'] != 'Password1#'):
+        return sendResponse(401, json.dumps({'message' : "invalid user credentials"}))
+
+    logInfo('user/2', user['username'])
+    token = generateToken(user['username'])
+    logInfo('token', token)
+    return sendResponse(200, json.dumps({'token' : token}))
+
+
+
+
+### Respond Invalid request
+def invalidRequest(event):
+    msg = {'message' : 'Requested path :' + event['path'] + ' and httpMethod:' + event['httpMethod'] + ' not allowed.'}
+    return sendResponse(405, json.dumps(msg))    
+
