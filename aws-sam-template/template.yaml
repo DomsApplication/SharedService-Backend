@@ -87,7 +87,7 @@ Resources:
         StackName: !Ref StackName
         AuthenticationFunctionArn: !GetAtt LambdaStack.Outputs.AuthenticationFunctionArn
         AuthorizationFunctionArn: !GetAtt LambdaStack.Outputs.AuthorizationFunctionArn
-        PlatformWriteFunctionArn: !GetAtt LambdaStack.Outputs.platformWriteFunctionArn
+        RepositoryFunctionArn: !GetAtt LambdaStack.Outputs.RepositoryFunctionArn
       Tags:
         - Key: Name
           Value: ApiGatewayStack
@@ -107,10 +107,10 @@ Outputs:
     Description: "Authorization Lambda funcation ARN value"
     Value:
       Fn::GetAtt: LambdaStack.Outputs.AuthorizationFunctionArn
-  platformWriteFunctionArn:
-    Description: "Platform Lambda funcation ARN value"
+  RepositoryFunctionArn:
+    Description: "Repository Lambda funcation ARN value"
     Value:
-      Fn::GetAtt: LambdaStack.Outputs.platformWriteFunctionArn
+      Fn::GetAtt: LambdaStack.Outputs.RepositoryFunctionArn
 
   DataSourceTableArn:
     Description: "DynamoDB table for serverless microserive architecture for DOMS product (Data Object Modeling)"
