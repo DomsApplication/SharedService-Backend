@@ -5,7 +5,7 @@ import json
 import uuid
 from datetime import datetime
 from logger import logInfo, logError
-from jwt import generateToken
+from appJwt import generateToken
 
 def lambda_handler(event, context):
     try:
@@ -18,7 +18,7 @@ def lambda_handler(event, context):
         logInfo('body', event['body'])
 
         if(event['path'] == '/auth/token' and event['httpMethod'] == 'POST'):
-            return generateToken(event, context)
+            return genToken(event, context)
         else:
             invalidRequest(event)
 
@@ -50,7 +50,7 @@ def sendErrorResponse(statusCode, body, context):
 
 
 ### Generate JWT token
-def generateToken(event, context):
+def genToken(event, context):
     if('body' not in event):
         return sendErrorResponse(400, json.dumps({'message' : "Request body was missed. Kindly provide 'username' & 'password' in json format."}), context)
 
