@@ -9,6 +9,8 @@ Description: >
   deploy the serverless microservice: complete funcation base lambda function:
 
 Parameters:
+  StackName:
+    Type: String
   DomsRepoBucketName:
     Type: String
     Description: "Common s3 bucket for DOMS application"
@@ -45,6 +47,8 @@ Resources:
       CodeUri: ../functions-python/doms-authorization
       Handler: app.lambda_handler
       Runtime: python3.11
+      Layers:
+        - !Ref pythonLibs
       Role: !GetAtt AuthorizationLambdaExecutionRole.Arn
 
   # <<<<<<< {{LAMBDA FUNCTION}} repository >>>>>>>>>>>
@@ -59,7 +63,7 @@ Resources:
   pythonLibs:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: python-lib
+      LayerName: !Join [ "-", [!Ref StackName, "python-libraries"]] 
       Description: Dependencies for the blank-python sample app.
       ContentUri: ../functions-python/layer/.
       CompatibleRuntimes:

@@ -22,8 +22,6 @@ def lambda_handler(event, context):
         return sendErrorResponse(500, str(error), context)
 
 
-
-
 ### Send http response
 def sendResponse(statusCode, body): 
     return {
