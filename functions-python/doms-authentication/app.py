@@ -50,10 +50,11 @@ def genToken(event, context):
 
     user = json.loads(event['body'])
 
+    logInfo('user/2.1', user['username'])
+    logInfo('user/2.2', user['password'])
     if(user['username'] != 'system' and user['password'] != 'Password1#'):
         return sendResponse(401, json.dumps({'message' : "invalid user credentials"}))
 
-    logInfo('user/2', user['username'])
     token = generateToken(user['username'])
     logInfo('token', token)
     return sendResponse(200, json.dumps({'token' : token}))
