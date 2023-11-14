@@ -1,29 +1,40 @@
-import boto3
-import sys
-import os
+import jwt
 import json
-import uuid
-from datetime import datetime
+import time
+from logger import logInfo, logError
+
+JWT_SECRET = 'secret'
+JWT_ALGORITHM = 'HS256'
+JWT_EXP_DELTA_SECONDS = 1000 * 60 * 5
 
 def lambda_handler(event, context):
-    print('Request from AUTHORIZATION...')
-    print('OS ::: ' , os.name)
-    print('Python version ::: ' , sys.version)
-    print('Version info ::: ' , sys.version_info)
-
-    print('event :::', event)
-
-    response = {
-        'id': str(uuid.uuid4()),
-        'date': str(datetime.timestamp(datetime.now())),
-        'stage': 'DEV',
-        'message': 'Hello World!...'
-    }
-
-    print(response)
-
+    token = event['Authorization']
+    logInfo('token', token)
+    try:
+        decoded = jwt.decode(token, JWT_SECRET, JWT_ALGORITHM)
+        principalId = decoded['principalId']
+        exp = decoded['exp']
+        logInfo('principalId', principalId)
+        logInfo('exp', exp)
+        policyDocument = {
+            'Version' : '2012-10-17',
+            'Statement' : [{
+                'Action' : 'execute-api:Invoke',
+                'Effect' : 'Allow',
+                'Resource' : event['methodArn']
+            }]
+        }
+    except:
+        principalId = 'unauthorized',
+        policyDocument = {
+            'Version' : '2012-10-17',
+            'Statement' : [{
+                'Action' : 'execute-api:Invoke',
+                'Effect' : 'Deny',
+                'Resource' : event['methodArn']
+            }]
+        }
     return {
-        'statusCode': 200,
-        'headers': {},
-        'body': json.dumps(response)
+        'principalId' :  principalId,
+        'policyDocument' : policyDocument
     }
