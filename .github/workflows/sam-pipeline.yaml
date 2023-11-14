@@ -110,17 +110,13 @@ jobs:
           echo artifacts-bucket     : ${{ inputs.artifacts-bucket }}
           echo PARAMETER_OVERRIDES  : ${{ secrets.PARAMETER_OVERRIDES }} | sed -e 's/\(.\)/\1 /g'
 
-      # Build lambda layer    
-      - name: Build lambda layer
+      # Insall python dependencies    
+      - name: Install python dependencies
         run: |
-          set -eo pipefail \
-          && pip install --upgrade pip \
-          && pip --version \
-          && cd functions-python/layer \
-          && pip install --target /python -r requirements.txt \   
-          && pwd \
-          && cd python \  
-          && pwd
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          cd functions-python/layer
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       # SAM template validate
       - name: Template Validate
