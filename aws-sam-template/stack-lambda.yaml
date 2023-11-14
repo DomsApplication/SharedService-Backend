@@ -34,6 +34,8 @@ Resources:
       CodeUri: ../functions-python/doms-authentication
       Handler: app.lambda_handler
       Runtime: python3.11
+      Layers:
+        - !Ref pythonLibs
       Role: !GetAtt AuthenticationLambdaExecutionRole.Arn
 
   # <<<<<<< {{LAMBDA FUNCTION}} authorization >>>>>>>>>>>
@@ -53,6 +55,15 @@ Resources:
       Handler: index.handler
       Runtime: nodejs18.x
       Role: !GetAtt repositoryLambdaExecutionRole.Arn
+
+  pythonLibs:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: python-lib
+      Description: Dependencies for the blank-python sample app.
+      ContentUri: ../functions-python/layer/.
+      CompatibleRuntimes:
+        - python3.11
 
   #
   #
