@@ -116,7 +116,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest
           cd functions-python/layer
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pwd
+          if [ -f requirements.txt ]; then pip install --target /python -r requirements.txt; fi
 
       # SAM template validate
       - name: Template Validate
