@@ -117,6 +117,8 @@ jobs:
           pip install flake8 pytest
           cd functions-python/layer
           pwd
+          sudo mkdir -m 777 python
+          pwd
           if [ -f requirements.txt ]; then pip install --target /python -r requirements.txt; fi
 
       # SAM template validate
