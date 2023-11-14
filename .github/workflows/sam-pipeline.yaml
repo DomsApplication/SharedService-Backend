@@ -114,8 +114,10 @@ jobs:
       - name: Build lambda layer
         run: |
           set -eo pipefail \
+          && pip install --upgrade pip \
           && pip --version \
           && cd functions-python/layer \
+          && chmod -R 777 python 
           && pip install --target /python -r requirements.txt \
           && cd python \  
           && pwd \
