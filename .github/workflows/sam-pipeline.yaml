@@ -118,12 +118,12 @@ jobs:
           && pip --version \
           && cd functions-python/layer \
           && pwd \
-          && chmod -R 777 /python \ 
+          && mkdir -m 777 python \ 
+          && echo "************ layer folder ******************" \
+          && ls -l \
           && pip install --target /python -r requirements.txt \
           && cd python \  
-          && pwd \
-          && echo "************ layer folder ******************" \
-          && ls -l
+          && pwd
 
       # SAM template validate
       - name: Template Validate
