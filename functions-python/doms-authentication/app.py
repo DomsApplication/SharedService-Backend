@@ -1,9 +1,4 @@
-import boto3
-import sys
-import os
 import json
-import uuid
-from datetime import datetime
 from logger import logInfo, logError
 from apptoken import generateToken
 
@@ -64,8 +59,6 @@ def genToken(event, context):
     token = generateToken(user['username'])
     logInfo('token', token)
     return sendResponse(200, json.dumps({'token' : token}))
-
-
 
 
 ### Respond Invalid request
