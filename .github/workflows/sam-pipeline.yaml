@@ -14,31 +14,22 @@ on:
         required: true
         type: environment
         default: 'dev'
-      # working-directory is added to accommodate monorepo.  For multi repo, defaults to '.', current directory
       working-directory:
         required: false
         type: string
         default: '.'
-      # sam version
-      sam-version:
-        required: false
-        type: string
-        default: '1.71.0'
-      # sam template
       sam-template:
         required: false
         type: string
         default: './aws-sam-template/template.yaml'
-      # stack name
       stack-name:
         required: true
         type: string
-        default: 'shavika-service'
-      # artifacts bucket
+        default: 'shavika-doms-backend'
       artifacts-bucket:
         required: false
         type: string
-        default: 'aws-sam-cli-managed-default-doms-projects-001'
+        default: 'aws-sam-cli-shavika-doms-backend'
 
 #  pull_request:
 #    branches: [ main ]
@@ -146,6 +137,7 @@ jobs:
             --role-arn ${CLOUDFORMATION_EXECUTION_ROLE} \
             ${{ secrets.PARAMETER_OVERRIDES || ''}}
 
+      # Delete if failure
       - name: Delete if failure
         if: failure()
         run: |

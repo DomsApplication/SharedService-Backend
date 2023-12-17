@@ -35,7 +35,7 @@ Resources:
     Properties:
       CodeUri: ../functions-python/doms-authentication
       Handler: app.lambda_handler
-      Runtime: python3.11
+      Runtime: python3.12
       Layers:
         - !Ref pythonLibs
       Role: !GetAtt AuthenticationLambdaExecutionRole.Arn
@@ -46,7 +46,7 @@ Resources:
     Properties:
       CodeUri: ../functions-python/doms-authorization
       Handler: app.lambda_handler
-      Runtime: python3.11
+      Runtime: python3.12
       Layers:
         - !Ref pythonLibs
       Role: !GetAtt AuthorizationLambdaExecutionRole.Arn
@@ -67,7 +67,7 @@ Resources:
       Description: Dependencies for the blank-python sample app.
       ContentUri: ../functions-python/layer/.
       CompatibleRuntimes:
-        - python3.11
+        - python3.12
 
   #
   #
