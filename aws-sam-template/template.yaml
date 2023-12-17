@@ -11,34 +11,27 @@ Description: >
     stepfunction's:
 
 Parameters:
+  StackName:
+    Type: String
+    Default: "shavika-doms-backend"
   ParameterInstancePrefix:
     Type: String
-    Default: "shavika"
-    Description: "Prefix to be used in names of the things created by this stack."
+    Default: "shavika-doms-backend"
   TagProvisioner:
     Type: String
     Default: "SAM"
-    Description: "Tag-Provisioner"
   TagProject:
     Type: String
     Default: "DOMS"
-    Description: "Tag-Project"
   TagBusinessUnit:
     Type: String
     Default: "Platform"
-    Description: "Tag-BusinessUnit"
   TagBusinessModel:
     Type: String
     Default: "shared"
-    Description: "Tag-BusinessModel"
   TagProductVersion:
     Type: String
-    Default: "2023.1.0.0"
-    Description: "Tag-ProductVersion"
-  StackName:
-    Type: String
-    Default: "shavika-service"
-    Description: "Tag-ProductVersion"
+    Default: "1.0.0"
 
 Resources:
 
