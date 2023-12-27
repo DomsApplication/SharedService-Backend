@@ -55,9 +55,11 @@ Resources:
   repositoryFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: ../functions-nodejs/doms-repository
-      Handler: index.handler
-      Runtime: nodejs18.x
+      CodeUri: ../functions-python/doms-repository
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Layers:
+        - !Ref pythonLibs
       Role: !GetAtt repositoryLambdaExecutionRole.Arn
 
   pythonLibs:
