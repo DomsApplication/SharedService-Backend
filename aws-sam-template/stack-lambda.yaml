@@ -28,7 +28,7 @@ Globals:
     Environment:
       Variables:
         DDB_TABLE_NAME: !Ref DataSourceTableName
-        AWS_Region : AWS::Region
+        AWS_Region : !Ref AWS::Region
 
 Resources:
   #
