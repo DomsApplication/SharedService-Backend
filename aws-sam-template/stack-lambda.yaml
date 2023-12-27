@@ -25,6 +25,10 @@ Globals:
       - x86_64
     MemorySize: 128
     Timeout: 10
+    Environment:
+      Variables:
+        DDB_TABLE_NAME: !Ref DataSourceTableName
+        AWS_Region : AWS::Region
 
 Resources:
   #

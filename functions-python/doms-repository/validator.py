@@ -1,9 +1,8 @@
-import json
 import jsonschema
-from jsonschema import validate
 from logger import logInfo, logDebug, logError, logException
+from repository import getItemByEntityPk
 
-# Get a JsonSchema 
+# Get a JsonSchema from the dynamodb using entity name.
 def get_schema(entityName):
     schema = {
         "$schema":"http://json-schema.org/draft-04/schema#",
@@ -14,7 +13,9 @@ def get_schema(entityName):
             "unique_id":{
                 "description":"The unique identifier for a user",
                 "type":"string",
-                "pattern": "^[0-9A-Za-z\_\-]+$"
+                "pattern": "[a-zA-Z0-9_-]+$",
+                "minLength" : 3,
+                "maxLength" : 10
             },
             "name":{
                 "description":"Name of the user",
@@ -26,20 +27,28 @@ def get_schema(entityName):
             "name"
         ]
     }
+
+    #schema = getItemByEntityPk('SCHEMA', entityName)
+    
     return schema
 
 # validate the json data from the schema
 def validateJson(entityName, json_data):
-    schema = get_schema(entityName)
-    
     try:
-        validator = jsonschema.Draft202012Validator(schema)
-        errors = validator.iter_errors(json_data)
+        schema = get_schema(entityName)
+        errors = jsonschema.Draft202012Validator(schema).iter_errors(json_data)
         err_list = []
         for error in errors:
-            logInfo("The JSON data is not valid", error)
-            err_list.append(error)
-        return err_list        
+            err_list.append(errorMessage(str(error.absolute_path), error.message))
+        if not err_list:     
+            return True, ""        
+        else:
+            return False, '\n'.join(err_list)        
     except jsonschema.exceptions.ValidationError as err:
         raise Exception(err)
 
+# Prepare the validation error message as human readable format.
+def errorMessage(path, message):
+    path = path.replace("deque(", "")
+    path = path.replace(")", "")
+    return ' : '.join([path, message])
