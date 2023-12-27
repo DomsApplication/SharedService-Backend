@@ -1,1 +1,2 @@
 pyjwt
+jsonschema==4.17.3

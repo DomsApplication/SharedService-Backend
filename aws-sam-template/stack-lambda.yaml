@@ -25,6 +25,10 @@ Globals:
       - x86_64
     MemorySize: 128
     Timeout: 10
+    Environment:
+      Variables:
+        DDB_TABLE_NAME: !Ref DataSourceTableName
+        AWS_Region : AWS::Region
 
 Resources:
   #
@@ -55,9 +59,11 @@ Resources:
   repositoryFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: ../functions-nodejs/doms-repository
-      Handler: index.handler
-      Runtime: nodejs18.x
+      CodeUri: ../functions-python/doms-repository
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Layers:
+        - !Ref pythonLibs
       Role: !GetAtt repositoryLambdaExecutionRole.Arn
 
   pythonLibs:
