@@ -27,8 +27,10 @@ Globals:
     Timeout: 10
     Environment:
       Variables:
-        DDB_TABLE_NAME: !Ref DataSourceTableName
         AWS_Region : !Ref AWS::Region
+        AWS_AccountId : !Ref AWS::AccountId
+        DDB_TABLE_NAME: !Ref DataSourceTableName
+        S3_BUCKET_NAME: !Ref DomsRepoBucketName
 
 Resources:
   #

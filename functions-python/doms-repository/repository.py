@@ -24,8 +24,8 @@ def getItemByEntityPk(entity, pk):
     try:
         response = dynamodb_client.query(
             TableName = DDB_TABLE_NAME,
-            IndexName = 'ENTITIES-IDX', 
-            KeyConditionExpression = Key('ENTITIES').eq(entity) & Key('PK_UID').eq(pk)
+            IndexName = 'ENTITIES_INX', 
+            KeyConditionExpression = Key('ENTITIES').eq(entity) & Key('PK').eq(pk)
         )
         if 'Items' in response and len(response['Items']) == 1:
             response = response['Items'][0]
