@@ -4,16 +4,12 @@ Validation errors, and some surrounding helpers.
 from __future__ import annotations
 
 from collections import defaultdict, deque
-from collections.abc import Iterable, Mapping, MutableMapping
 from pprint import pformat
 from textwrap import dedent, indent
-from typing import ClassVar
 import heapq
 import itertools
-import warnings
 
-from attrs import define
-from referencing.exceptions import Unresolvable as _Unresolvable
+import attr
 
 from jsonschema import _utils
 
@@ -23,25 +19,10 @@ STRONG_MATCHES: frozenset[str] = frozenset()
 _unset = _utils.Unset()
 
 
-def __getattr__(name):
-    if name == "RefResolutionError":
-        warnings.warn(
-            _RefResolutionError._DEPRECATION_MESSAGE,
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return _RefResolutionError
-    raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
 class _Error(Exception):
-
-    _word_for_schema_in_error_message: ClassVar[str]
-    _word_for_instance_in_error_message: ClassVar[str]
-
     def __init__(
         self,
-        message: str,
+        message,
         validator=_unset,
         path=(),
         cause=None,
@@ -53,7 +34,7 @@ class _Error(Exception):
         parent=None,
         type_checker=_unset,
     ):
-        super().__init__(
+        super(_Error, self).__init__(
             message,
             validator,
             path,
@@ -194,51 +175,16 @@ class SchemaError(_Error):
     _word_for_instance_in_error_message = "schema"
 
 
-@define(slots=False)
-class _RefResolutionError(Exception):
+@attr.s(hash=True)
+class RefResolutionError(Exception):
     """
     A ref could not be resolved.
     """
 
-    _DEPRECATION_MESSAGE = (
-        "jsonschema.exceptions.RefResolutionError is deprecated as of version "
-        "4.18.0. If you wish to catch potential reference resolution errors, "
-        "directly catch referencing.exceptions.Unresolvable."
-    )
-
-    _cause: Exception
-
-    def __eq__(self, other):
-        if self.__class__ is not other.__class__:
-            return NotImplemented  # pragma: no cover -- uncovered but deprecated  # noqa: E501
-        return self._cause == other._cause
+    _cause = attr.ib()
 
     def __str__(self):
         return str(self._cause)
-
-
-class _WrappedReferencingError(_RefResolutionError, _Unresolvable):  # pragma: no cover -- partially uncovered but to be removed  # noqa: E501
-    def __init__(self, cause: _Unresolvable):
-        object.__setattr__(self, "_wrapped", cause)
-
-    def __eq__(self, other):
-        if other.__class__ is self.__class__:
-            return self._wrapped == other._wrapped
-        elif other.__class__ is self._wrapped.__class__:
-            return self._wrapped == other
-        return NotImplemented
-
-    def __getattr__(self, attr):
-        return getattr(self._wrapped, attr)
-
-    def __hash__(self):
-        return hash(self._wrapped)
-
-    def __repr__(self):
-        return f"<WrappedReferencingError {self._wrapped!r}>"
-
-    def __str__(self):
-        return f"{self._wrapped.__class__.__name__}: {self._wrapped}"
 
 
 class UndefinedTypeCheck(Exception):
@@ -283,7 +229,7 @@ class FormatError(Exception):
     """
 
     def __init__(self, message, cause=None):
-        super().__init__(message, cause)
+        super(FormatError, self).__init__(message, cause)
         self.message = message
         self.cause = self.__cause__ = cause
 
@@ -298,9 +244,9 @@ class ErrorTree:
 
     _instance = _unset
 
-    def __init__(self, errors: Iterable[ValidationError] = ()):
-        self.errors: MutableMapping[str, ValidationError] = {}
-        self._contents: Mapping[str, ErrorTree] = defaultdict(self.__class__)
+    def __init__(self, errors=()):
+        self.errors = {}
+        self._contents = defaultdict(self.__class__)
 
         for error in errors:
             container = self
@@ -310,10 +256,11 @@ class ErrorTree:
 
             container._instance = error.instance
 
-    def __contains__(self, index: str | int):
+    def __contains__(self, index):
         """
         Check whether ``instance[index]`` has any errors.
         """
+
         return index in self._contents
 
     def __getitem__(self, index):
@@ -325,31 +272,22 @@ class ErrorTree:
         by ``instance.__getitem__`` will be propagated (usually this is
         some subclass of `LookupError`.
         """
+
         if self._instance is not _unset and index not in self:
             self._instance[index]
         return self._contents[index]
 
-    def __setitem__(self, index: str | int, value: ErrorTree):
+    def __setitem__(self, index, value):
         """
         Add an error to the tree at the given ``index``.
-
-        .. deprecated:: v4.20.0
-
-            Setting items on an `ErrorTree` is deprecated without replacement.
-            To populate a tree, provide all of its sub-errors when you
-            construct the tree.
         """
-        warnings.warn(
-            "ErrorTree.__setitem__ is deprecated without replacement.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._contents[index] = value  # type: ignore[index]
+        self._contents[index] = value
 
     def __iter__(self):
         """
         Iterate (non-recursively) over the indices in the instance with errors.
         """
+
         return iter(self._contents)
 
     def __len__(self):
@@ -368,6 +306,7 @@ class ErrorTree:
         """
         The total number of errors in the entire tree, including children.
         """
+
         child_errors = sum(len(tree) for _, tree in self._contents.items())
         return len(self.errors) + child_errors
 
@@ -389,7 +328,6 @@ def by_relevance(weak=WEAK_MATCHES, strong=STRONG_MATCHES):
             a collection of validation keywords to consider to be
             "strong"
     """
-
     def relevance(error):
         validator = error.validator
         return (
@@ -398,20 +336,10 @@ def by_relevance(weak=WEAK_MATCHES, strong=STRONG_MATCHES):
             validator in strong,
             not error._matches_type(),
         )
-
     return relevance
 
 
 relevance = by_relevance()
-"""
-A key function (e.g. to use with `sorted`) which sorts errors by relevance.
-
-Example:
-
-.. code:: python
-
-    sorted(validator.iter_errors(12), key=jsonschema.exceptions.relevance)
-"""
 
 
 def best_match(errors, key=relevance):

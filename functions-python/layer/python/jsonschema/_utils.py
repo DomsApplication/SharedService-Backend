@@ -1,7 +1,15 @@
 from collections.abc import Mapping, MutableMapping, Sequence
 from urllib.parse import urlsplit
 import itertools
+import json
 import re
+import sys
+
+# The files() API was added in Python 3.9.
+if sys.version_info >= (3, 9):  # pragma: no cover
+    from importlib import resources
+else:  # pragma: no cover
+    import importlib_resources as resources  # type: ignore
 
 
 class URIDict(MutableMapping):
@@ -28,10 +36,10 @@ class URIDict(MutableMapping):
     def __iter__(self):
         return iter(self.store)
 
-    def __len__(self):  # pragma: no cover -- untested, but to be removed
+    def __len__(self):
         return len(self.store)
 
-    def __repr__(self):  # pragma: no cover -- untested, but to be removed
+    def __repr__(self):
         return repr(self.store)
 
 
@@ -40,8 +48,18 @@ class Unset:
     An as-of-yet unset attribute or unprovided default parameter.
     """
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         return "<unset>"
+
+
+def load_schema(name):
+    """
+    Load a schema from ./schemas/``name``.json and return it.
+    """
+
+    path = resources.files(__package__).joinpath(f"schemas/{name}.json")
+    data = path.read_text(encoding="utf-8")
+    return json.loads(data)
 
 
 def format_as_index(container, indices):
@@ -90,8 +108,11 @@ def extras_msg(extras):
     Create an error message for extra items or properties.
     """
 
-    verb = "was" if len(extras) == 1 else "were"
-    return ", ".join(repr(extra) for extra in extras), verb
+    if len(extras) == 1:
+        verb = "was"
+    else:
+        verb = "were"
+    return ", ".join(repr(extra) for extra in sorted(extras)), verb
 
 
 def ensure_list(thing):
@@ -197,33 +218,16 @@ def find_evaluated_item_indexes_by_schema(validator, instance, schema):
     if "items" in schema:
         return list(range(0, len(instance)))
 
-    ref = schema.get("$ref")
-    if ref is not None:
-        resolved = validator._resolver.lookup(ref)
-        evaluated_indexes.extend(
-            find_evaluated_item_indexes_by_schema(
-                validator.evolve(
-                    schema=resolved.contents,
-                    _resolver=resolved.resolver,
-                ),
-                instance,
-                resolved.contents,
-            ),
-        )
+    if "$ref" in schema:
+        scope, resolved = validator.resolver.resolve(schema["$ref"])
+        validator.resolver.push_scope(scope)
 
-    dynamicRef = schema.get("$dynamicRef")
-    if dynamicRef is not None:
-        resolved = validator._resolver.lookup(dynamicRef)
-        evaluated_indexes.extend(
-            find_evaluated_item_indexes_by_schema(
-                validator.evolve(
-                    schema=resolved.contents,
-                    _resolver=resolved.resolver,
-                ),
-                instance,
-                resolved.contents,
-            ),
-        )
+        try:
+            evaluated_indexes += find_evaluated_item_indexes_by_schema(
+                validator, instance, resolved,
+            )
+        finally:
+            validator.resolver.pop_scope()
 
     if "prefixItems" in schema:
         evaluated_indexes += list(range(0, len(schema["prefixItems"])))
@@ -252,8 +256,8 @@ def find_evaluated_item_indexes_by_schema(validator, instance, schema):
     for keyword in ["allOf", "oneOf", "anyOf"]:
         if keyword in schema:
             for subschema in schema[keyword]:
-                errs = next(validator.descend(instance, subschema), None)
-                if errs is None:
+                errs = list(validator.descend(instance, subschema))
+                if not errs:
                     evaluated_indexes += find_evaluated_item_indexes_by_schema(
                         validator, instance, subschema,
                     )
@@ -273,51 +277,41 @@ def find_evaluated_property_keys_by_schema(validator, instance, schema):
         return []
     evaluated_keys = []
 
-    ref = schema.get("$ref")
-    if ref is not None:
-        resolved = validator._resolver.lookup(ref)
-        evaluated_keys.extend(
-            find_evaluated_property_keys_by_schema(
-                validator.evolve(
-                    schema=resolved.contents,
-                    _resolver=resolved.resolver,
-                ),
-                instance,
-                resolved.contents,
-            ),
-        )
+    if "$ref" in schema:
+        scope, resolved = validator.resolver.resolve(schema["$ref"])
+        validator.resolver.push_scope(scope)
 
-    dynamicRef = schema.get("$dynamicRef")
-    if dynamicRef is not None:
-        resolved = validator._resolver.lookup(dynamicRef)
-        evaluated_keys.extend(
-            find_evaluated_property_keys_by_schema(
-                validator.evolve(
-                    schema=resolved.contents,
-                    _resolver=resolved.resolver,
-                ),
-                instance,
-                resolved.contents,
-            ),
-        )
+        try:
+            evaluated_keys += find_evaluated_property_keys_by_schema(
+                validator, instance, resolved,
+            )
+        finally:
+            validator.resolver.pop_scope()
 
     for keyword in [
         "properties", "additionalProperties", "unevaluatedProperties",
     ]:
         if keyword in schema:
-            schema_value = schema[keyword]
-            if validator.is_type(schema_value, "boolean") and schema_value:
-                evaluated_keys += instance.keys()
+            if validator.is_type(schema[keyword], "boolean"):
+                for property, value in instance.items():
+                    if validator.evolve(schema=schema[keyword]).is_valid(
+                        {property: value},
+                    ):
+                        evaluated_keys.append(property)
 
-            elif validator.is_type(schema_value, "object"):
-                for property in schema_value:
-                    if property in instance:
+            if validator.is_type(schema[keyword], "object"):
+                for property, subschema in schema[keyword].items():
+                    if property in instance and validator.evolve(
+                        schema=subschema,
+                    ).is_valid(instance[property]):
                         evaluated_keys.append(property)
 
     if "patternProperties" in schema:
-        for property in instance:
-            for pattern in schema["patternProperties"]:
-                if re.search(pattern, property):
+        for property, value in instance.items():
+            for pattern, _ in schema["patternProperties"].items():
+                if re.search(pattern, property) and validator.evolve(
+                    schema=schema["patternProperties"],
+                ).is_valid({property: value}):
                     evaluated_keys.append(property)
 
     if "dependentSchemas" in schema:
@@ -331,8 +325,8 @@ def find_evaluated_property_keys_by_schema(validator, instance, schema):
     for keyword in ["allOf", "oneOf", "anyOf"]:
         if keyword in schema:
             for subschema in schema[keyword]:
-                errs = next(validator.descend(instance, subschema), None)
-                if errs is None:
+                errs = list(validator.descend(instance, subschema))
+                if not errs:
                     evaluated_keys += find_evaluated_property_keys_by_schema(
                         validator, instance, subschema,
                     )
