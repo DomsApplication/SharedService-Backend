@@ -4,32 +4,7 @@ from repository import getItemByEntityPk
 
 # Get a JsonSchema from the dynamodb using entity name.
 def get_schema(entityName):
-    schema = {
-        "$schema":"http://json-schema.org/draft-04/schema#",
-        "title":"user",
-        "description":"A user request json",
-        "type":"object",
-        "properties":{
-            "unique_id":{
-                "description":"The unique identifier for a user",
-                "type":"string",
-                "pattern": "[a-zA-Z0-9_-]+$",
-                "minLength" : 3,
-                "maxLength" : 10
-            },
-            "name":{
-                "description":"Name of the user",
-                "type":"string"
-            }
-        },
-        "required":[
-            "unique_id",
-            "name"
-        ]
-    }
-
-    #schema = getItemByEntityPk('SCHEMA', entityName)
-    
+    schema = getItemByEntityPk('SCHEMA', entityName)
     return schema
 
 # validate the json data from the schema
