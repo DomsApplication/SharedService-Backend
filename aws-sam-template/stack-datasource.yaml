@@ -72,7 +72,7 @@ Resources:
               KeyType: "RANGE"  
           Projection:
             NonKeyAttributes:
-            - SK
+            - PK
             ProjectionType: "INCLUDE"
         -
           IndexName: "MAPPINGS_IDX"
@@ -85,7 +85,7 @@ Resources:
               KeyType: "RANGE"  
           Projection:
             NonKeyAttributes:
-            - PK
+            - SK
             ProjectionType: "INCLUDE"
 
 #############################################################################################################################################################
