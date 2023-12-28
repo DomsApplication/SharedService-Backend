@@ -58,9 +58,7 @@ Resources:
               AttributeName: "PK"
               KeyType: "RANGE"  
           Projection:
-            NonKeyAttributes:
-            - SK
-            ProjectionType: "INCLUDE"
+            ProjectionType: "ALL"
         -
           IndexName: "PATENT_INX"
           KeySchema:
@@ -71,9 +69,7 @@ Resources:
               AttributeName: "SK"
               KeyType: "RANGE"  
           Projection:
-            NonKeyAttributes:
-            - PK
-            ProjectionType: "INCLUDE"
+            ProjectionType: "ALL"
         -
           IndexName: "MAPPINGS_IDX"
           KeySchema:
@@ -84,9 +80,7 @@ Resources:
               AttributeName: "PK"
               KeyType: "RANGE"  
           Projection:
-            NonKeyAttributes:
-            - SK
-            ProjectionType: "INCLUDE"
+            ProjectionType: "ALL"
 
 #############################################################################################################################################################
 # {output}     
