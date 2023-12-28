@@ -38,7 +38,7 @@ Resources:
           AttributeName: "PARENT"
           AttributeType: "S"
         -
-          AttributeName: "SEARCH_VAL"
+          AttributeName: "MAPPINGS"
           AttributeType: "S"
       KeySchema:
         - 
@@ -58,7 +58,7 @@ Resources:
               AttributeName: "PK"
               KeyType: "RANGE"  
           Projection:
-            ProjectionType: "KEYS_ONLY"
+            ProjectionType: "ALL"
         -
           IndexName: "PATENT_INX"
           KeySchema:
@@ -66,21 +66,21 @@ Resources:
               AttributeName: "PARENT"
               KeyType: "HASH"
             -
-              AttributeName: "PK"
+              AttributeName: "SK"
               KeyType: "RANGE"  
           Projection:
-            ProjectionType: "KEYS_ONLY"
+            ProjectionType: "ALL"
         -
-          IndexName: "SEARCH_INX"
+          IndexName: "MAPPINGS_IDX"
           KeySchema:
             -
-              AttributeName: "SEARCH_VAL"
+              AttributeName: "MAPPINGS"
               KeyType: "HASH"
             -
               AttributeName: "PK"
               KeyType: "RANGE"  
           Projection:
-            ProjectionType: "KEYS_ONLY"
+            ProjectionType: "ALL"
 
 #############################################################################################################################################################
 # {output}     
