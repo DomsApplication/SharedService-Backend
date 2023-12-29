@@ -26,6 +26,9 @@ Parameters:
   RepositoryFunctionArn:
     Type: String  
     Description : Arn Id for Repository write Lambda Function
+  QueriesFunctionArn:
+    Type: String  
+    Description : Arn Id for queriy Lambda Function
 
 Resources:
   #
