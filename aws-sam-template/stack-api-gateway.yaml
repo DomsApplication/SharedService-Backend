@@ -210,7 +210,7 @@ Resources:
         Type: AWS_PROXY
         Uri: !Sub
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
-          - lambdaArn: !Ref RepositoryFunctionArn
+          - lambdaArn: !Ref QueriesFunctionArn
         PassthroughBehavior: WHEN_NO_MATCH
         TimeoutInMillis: 29000  
       OperationName: 'Repo write lambda function'
@@ -221,7 +221,7 @@ Resources:
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: "lambda:InvokeFunction"
-      FunctionName: !Ref RepositoryFunctionArn
+      FunctionName: !Ref QueriesFunctionArn
       Principal: "apigateway.amazonaws.com"
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/repo/read/{proxy+}
 

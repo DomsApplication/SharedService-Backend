@@ -34,15 +34,30 @@ def lambda_handler(event, context):
             # ******** Validate the input json with schame *****************
             ### INSERT
             if event['httpMethod'] == 'POST':
-                message = f"Item '{pk}' is created successfully for the entity {entityName}."
+                if dbItem is not None: 
+                    message = f"Item '{pk}' is already exists for the entity {entityName}."
+                    return sendResponse(406, {'message' : message})
+
+                message = f"Item '{pk}' is created successfully for the entity {entityName}."                    
                 return sendResponse(201, {'message' : message})
+
             ### UPDATE
             elif event['httpMethod'] == 'PUT':
-                return sendResponse(200, {'message' : 'success'})
+                if dbItem is None: 
+                    message = f"Item '{pk}' is not exists for the entity {entityName}."
+                    return sendResponse(406, {'message' : message})
+
+                message = f"Item '{pk}' is updated successfully for the entity {entityName}."                    
+                return sendResponse(204, {'message' : message})
 
             ### DELETE
             elif event['httpMethod'] == 'DELETE':
-                return sendResponse(200, {'message' : 'success'})
+                if dbItem is None: 
+                    message = f"Item '{pk}' is not exists for the entity {entityName}."
+                    return sendResponse(406, {'message' : message})
+
+                message = f"Item '{pk}' is deleted successfully for the entity {entityName}."                    
+                return sendResponse(204, {'message' : message})
 
             else:
                 msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
