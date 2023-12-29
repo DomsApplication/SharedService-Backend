@@ -68,6 +68,15 @@ Resources:
         - !Ref pythonLibs
       Role: !GetAtt repositoryLambdaExecutionRole.Arn
 
+  # <<<<<<< {{LAMBDA FUNCTION}} queries >>>>>>>>>>>
+  queriesFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: ../functions-python/doms-queries
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt queriesLambdaExecutionRole.Arn
+
   pythonLibs:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -115,6 +124,18 @@ Resources:
               Service: lambda.amazonaws.com
             Action: "sts:AssumeRole"
 
+  # <<<<<<<  {{ROLE}} queries lambda execution role >>>>>>>>>>>    
+  queriesLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+
   #
   #
   # <<<<<<<  {{POLICY}} Basic Lambda execution policy >>>>>>>>>>>
@@ -125,7 +146,8 @@ Resources:
       Roles:
         - !Ref AuthenticationLambdaExecutionRole
         - !Ref AuthorizationLambdaExecutionRole
-        - !Ref repositoryLambdaExecutionRole                
+        - !Ref repositoryLambdaExecutionRole
+        - !Ref queriesLambdaExecutionRole                
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -150,6 +172,7 @@ Resources:
       PolicyName: LambdaDynamoDBAccess
       Roles:
         - !Ref repositoryLambdaExecutionRole
+        - !Ref queriesLambdaExecutionRole
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -227,3 +250,12 @@ Outputs:
     Value: !Ref repositoryFunction
     Export:
       Name: RepositoryFunctionName
+
+  QueriesFunctionArn:
+    Value: !GetAtt queriesFunction.Arn
+    Export:
+      Name: QueriesFunctionArn
+  QueriesFunctionName:
+    Value: !Ref queriesFunction
+    Export:
+      Name: QueriesFunctionName

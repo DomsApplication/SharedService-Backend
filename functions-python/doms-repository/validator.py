@@ -13,11 +13,19 @@ def get_schema(entityName):
     logDebug("get_schema/schema", schema)
     return json.loads(schema)
 
+# validate the json data from the entity name
+def validateJsonEntityName(entityName, json_data):
+    try:
+        schema = get_schema(entityName)
+        return validateJsonSchema(schema, json_data)
+    except Exception as err:
+        logException(err)        
+        raise Exception(err)
+
 # validate the json data from the schema
-def validateJson(entityName, json_data):
+def validateJsonSchema(schema, json_data):
     try:
         logDebug("validateJson/json_data", json_data)
-        schema = get_schema(entityName)
         logDebug("validateJson/schema", schema)
         errors = jsonschema.Draft202012Validator(schema).iter_errors(json_data)
         err_list = []
