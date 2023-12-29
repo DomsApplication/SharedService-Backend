@@ -1,6 +1,6 @@
 import os
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Key, Attr, FilterExpression
 from botocore.exceptions import ClientError
 from logger import logInfo, logDebug, logError, logException
 
@@ -22,6 +22,8 @@ def getItemByEntityIndexPk(entity, pk):
         response = dynamodb_client.query(
             TableName = DDB_TABLE_NAME,
             IndexName = 'ENTITIES_INX',
+            KeyConditionExpression = 'ENTITIES = :_ENTITIES and PK = :_pk',
+            FilterExpression = 'SK = :_sk',
             ExpressionAttributeValues = {
                 ":_ENTITIES" : {
                     'S' :  str(entity)
@@ -32,8 +34,7 @@ def getItemByEntityIndexPk(entity, pk):
                 ":_sk" : {
                     'S' :  str(pk)
                 }
-            },
-            KeyConditionExpression = 'ENTITIES = :_ENTITIES and PK = :_pk and SK = :_sk'
+            }
         )
         if 'Items' in response and len(response['Items']) == 0:
             return None

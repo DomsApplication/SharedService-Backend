@@ -23,7 +23,7 @@ def lambda_handler(event, context):
                 entitySchema = get_schema(entityName)
             except Exception as error:
                 logError('Exception in fetch schema', error)
-                return sendResponse(400, {'error' : f"Schema {entityName} not found.s"})
+                return sendResponse(400, {'error' : f"Schema {entityName} not found."})
 
             is_valid, message = validateJsonSchema(entitySchema, requestBody)
             logInfo("app/is_valid", is_valid)
