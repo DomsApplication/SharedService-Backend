@@ -1,6 +1,7 @@
 import json
 from logger import logInfo, logDebug, logError, logException
 from validator import validateJsonSchema, get_schema
+from repository import getItemByEntityIndexPk
 
 def lambda_handler(event, context):
     try:
@@ -24,12 +25,17 @@ def lambda_handler(event, context):
             if not is_valid:
                 return sendResponse(400, {'error' : message})
 
+            pk = requestBody['user_id']
+            logInfo("app/pk", pk)
+            dbItem = getItemByEntityIndexPk(entityName, pk)
+            logInfo("app/dbItem", dbItem)
+            
             #
             # ******** Validate the input json with schame *****************
             ### INSERT
             if event['httpMethod'] == 'POST':
-                return sendResponse(200, {'message' : 'success'})
-
+                message = f"Item '{pk}' is created successfully for the entity {entityName}."
+                return sendResponse(201, {'message' : message})
             ### UPDATE
             elif event['httpMethod'] == 'PUT':
                 return sendResponse(200, {'message' : 'success'})
