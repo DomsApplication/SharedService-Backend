@@ -44,6 +44,6 @@ def getItemByEntityIndexPk(entity, pk):
         else:
             return response['Items'][0]['PAYLOAD']['S']
     except ClientError as err:
-        exception_value = f"Can not query shavika-doms-backend-doms by index: 'ENTITIES-IDX', {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {pk} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logException(exception_value)
         raise ValueError(exception_value)
