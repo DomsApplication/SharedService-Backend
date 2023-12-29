@@ -11,7 +11,7 @@ def lambda_handler(event, context):
         logInfo('httpMethod', event['httpMethod'])
         logInfo('body', event['body'])
 
-        if event['path'] == '/api/payload/entity':
+        if event['path'] == '/repo/write/entity':
             
             requestBody = json.loads(event['body'])
             entityName = requestBody['entity']

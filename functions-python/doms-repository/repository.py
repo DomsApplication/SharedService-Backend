@@ -17,10 +17,10 @@ dynamodb_client = boto3.client('dynamodb', region_name = AWS_REGION_NAME)
 dynamodb = boto3.resource('dynamodb', region_name = AWS_REGION_NAME)
 table = dynamodb.Table(DDB_TABLE_NAME)
 
-def getItemByEntityPk(entity, pk):
+def getItemByEntityIndexPk(entity, pk):
     try:
         response = dynamodb_client.query(
-            TableName = 'shavika-doms-backend-doms',
+            TableName = DDB_TABLE_NAME,
             IndexName = 'ENTITIES_INX',
             ExpressionAttributeValues = {
                 ":_ENTITIES" : {
