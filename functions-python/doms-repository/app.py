@@ -1,6 +1,7 @@
 import json
 from logger import logInfo, logDebug, logError, logException
-from validator import validateJson
+from validator import validateJsonSchema, get_schema
+from repository import getItemByEntityIndexPk, insertItem
 
 def lambda_handler(event, context):
     try:
@@ -11,38 +12,66 @@ def lambda_handler(event, context):
         logInfo('httpMethod', event['httpMethod'])
         logInfo('body', event['body'])
 
-        #
-        # ******** Validate the input json with schame *****************
-        if event['httpMethod'] == 'POST' or event['httpMethod'] == 'PUT':
-
-            if 'body' not in event:
-                return sendResponse(400, {'message' : "Request body was missed. Kindly provide in json format."})
+        if event['path'] == '/repo/write/entity':
+            
             requestBody = json.loads(event['body'])
+            entityName = requestBody['entity']
+            logInfo("app/requestBody", requestBody)
+            logInfo("app/entityName", entityName)
 
-            #
-            #TODO: need to handle separate the parent & child entity and do validation. 
-            #
-            is_valid, message = validateJson("user", requestBody)
+            try:                
+                entitySchema = get_schema(entityName)
+            except Exception as error:
+                logError('Exception in fetch schema', error)
+                return sendResponse(400, {'error' : f"Schema {entityName} not found."})
+
+            is_valid, message = validateJsonSchema(entitySchema, requestBody)
+            logInfo("app/is_valid", is_valid)
             if not is_valid:
                 return sendResponse(400, {'error' : message})
 
-        #
-        # ******** Validate the input json with schame *****************
-        ### INSERT
-        if event['path'] == '/repo/write/entity' and event['httpMethod'] == 'POST':
-            return sendResponse(200, {'message' : 'success'})
+            pk = requestBody['user_id']
+            logInfo("app/pk", pk)
+            dbItem = getItemByEntityIndexPk(entityName, pk)
+            logInfo("app/dbItem", dbItem)
+            
+            #
+            # ******** Validate the input json with schame *****************
+            ### INSERT
+            if event['httpMethod'] == 'POST':
+                if dbItem is not None: 
+                    message = f"Item '{pk}' is already exists for the entity {entityName}."
+                    return sendResponse(406, {'message' : message})
 
-        ### UPDATE
-        elif event['path'] == '/repo/write/entity' and event['httpMethod'] == 'PUT':
-            return sendResponse(200, {'message' : 'success'})
+                insertItem(entityName, pk, 1, requestBody)
 
-        ### DELETE
-        elif event['path'] == '/repo/write/entity' and event['httpMethod'] == 'DELETE':
-            return sendResponse(200, {'message' : 'success'})
+                message = f"Item '{pk}' is created successfully for the entity {entityName}."                    
+                return sendResponse(201, {'message' : message})
 
-        else:
-            msg = {'message' : 'Requested path :' + event['path'] + ' and httpMethod:' + event['httpMethod'] + ' not allowed.'}
-            return sendResponse(405, msg)    
+            ### UPDATE
+            elif event['httpMethod'] == 'PUT':
+                if dbItem is None: 
+                    message = f"Item '{pk}' is not exists for the entity {entityName}."
+                    return sendResponse(406, {'message' : message})
+
+                message = f"Item '{pk}' is updated successfully for the entity {entityName}."                    
+                return sendResponse(204, {'message' : message})
+
+            ### DELETE
+            elif event['httpMethod'] == 'DELETE':
+                if dbItem is None: 
+                    message = f"Item '{pk}' is not exists for the entity {entityName}."
+                    return sendResponse(406, {'message' : message})
+
+                message = f"Item '{pk}' is deleted successfully for the entity {entityName}."                    
+                return sendResponse(204, {'message' : message})
+
+            else:
+                msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
+                return sendResponse(405, msg)    
+        else:    
+            msg = {'message' : 'Path :' + event['path'] + ' not found.'}
+            return sendResponse(404, msg)
     except Exception as error:
         logError('Exception in main function', error)
         return sendResponse(500, {'error' : str(error)})

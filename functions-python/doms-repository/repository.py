@@ -3,6 +3,7 @@ import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from logger import logInfo, logDebug, logError, logException
+from utlities import getDateTimeNow
 
 # https://www.fernandomc.com/posts/ten-examples-of-getting-data-from-dynamodb-with-python-and-boto3/
 # https://stackoverflow.com/questions/35758924/how-do-we-query-on-a-secondary-index-of-dynamodb-using-boto3
@@ -17,25 +18,58 @@ dynamodb_client = boto3.client('dynamodb', region_name = AWS_REGION_NAME)
 dynamodb = boto3.resource('dynamodb', region_name = AWS_REGION_NAME)
 table = dynamodb.Table(DDB_TABLE_NAME)
 
-def getItemByEntityPk(entity, pk):
+def getItemByEntityIndexPk(entity, pk):
     try:
         response = dynamodb_client.query(
-            TableName = 'shavika-doms-backend-doms',
+            TableName = DDB_TABLE_NAME,
             IndexName = 'ENTITIES_INX',
+            KeyConditionExpression = 'ENTITIES = :_ENTITIES and PK = :_pk',
+            FilterExpression = 'SK = :_sk',
             ExpressionAttributeValues = {
                 ":_ENTITIES" : {
                     'S' :  str(entity)
                 },
                 ":_pk" : {
                     'S' :  str(pk)
+                },
+                ":_sk" : {
+                    'S' :  str(pk)
                 }
-            },
-            KeyConditionExpression = 'ENTITIES = :_ENTITIES and PK = :_pk'
+            }
         )
-        if 'Items' in response and len(response['Items']) > 0:
+        if 'Items' in response and len(response['Items']) == 0:
+            return None
+        elif 'Items' in response and len(response['Items']) > 1:
+            exception_value = f"Duplciated item found in {DDB_TABLE_NAME} for pk: {pk} by index: 'ENTITIES-IDX'"
+            logException(exception_value)
+            raise ValueError(exception_value)
+        else:
             return response['Items'][0]['PAYLOAD']['S']
-        return ''
     except ClientError as err:
-        exception_value = f"Can not query shavika-doms-backend-doms by index: 'ENTITIES-IDX', {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {pk} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        logException(exception_value)
+        raise ValueError(exception_value)
+
+def insertItem(entity, pk, version, payload):
+    try:
+        item = {
+            "PK" : pk,
+            "SK" : pk,
+            "ENTITIES" : entity,
+            "MAPPINGS" : entity,
+            "VERSION" : version,
+            "PAYLOAD" : payload,
+            "CREATED_BY" : "task_user",
+            "CREATED_ON" : str(getDateTimeNow()),
+            "MODIFIED_BY" : "task_user",
+            "MODIFIED_ON" : str(getDateTimeNow()),
+        }
+        response = dynamodb.put_item(
+            TableName = DDB_TABLE_NAME,
+            Item = item
+        )
+        return response['ResponseMetadata']['HTTPStatusCode']
+    except ClientError as err:
+        exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {pk}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logException(exception_value)
         raise ValueError(exception_value)

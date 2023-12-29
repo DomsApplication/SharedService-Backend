@@ -1,7 +1,7 @@
 import json
 import jsonschema
 from logger import logInfo, logDebug, logError, logException
-from repository import getItemByEntityPk
+from repository import getItemByEntityIndexPk
 
 # https://donofden.com/blog/2020/03/15/How-to-Validate-JSON-Schema-using-Python
 # https://json-schema.org/understanding-json-schema/reference/object
@@ -9,16 +9,24 @@ from repository import getItemByEntityPk
 
 # Get a JsonSchema from the dynamodb using entity name.
 def get_schema(entityName):
-    schema = getItemByEntityPk('SCHEMA', entityName)
-    logDebug("get_schema/schema", schema)
+    schema = getItemByEntityIndexPk('SCHEMA', entityName)
+    logInfo("get_schema/schema", schema)
     return json.loads(schema)
 
-# validate the json data from the schema
-def validateJson(entityName, json_data):
+# validate the json data from the entity name
+def validateJsonEntityName(entityName, json_data):
     try:
-        logDebug("validateJson/json_data", json_data)
         schema = get_schema(entityName)
-        logDebug("validateJson/schema", schema)
+        return validateJsonSchema(schema, json_data)
+    except Exception as err:
+        logException(err)        
+        raise Exception(err)
+
+# validate the json data from the schema
+def validateJsonSchema(schema, json_data):
+    try:
+        logInfo("validateJson/json_data", json_data)
+        logInfo("validateJson/schema", schema)
         errors = jsonschema.Draft202012Validator(schema).iter_errors(json_data)
         err_list = []
         for error in errors:
