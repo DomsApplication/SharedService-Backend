@@ -17,13 +17,11 @@ def lambda_handler(event, context):
 
             if 'body' not in event:
                 return sendResponse(400, {'message' : "Request body was missed. Kindly provide in json format."})
-            
             requestBody = json.loads(event['body'])
 
             #
             #TODO: need to handle separate the parent & child entity and do validation. 
             #
-                
             is_valid, message = validateJson("user", requestBody)
             if not is_valid:
                 return sendResponse(400, {'error' : message})
@@ -31,15 +29,15 @@ def lambda_handler(event, context):
         #
         # ******** Validate the input json with schame *****************
         ### INSERT
-        if event['path'] == '/repo/write' and event['httpMethod'] == 'POST':
+        if event['path'] == '/repo/write/entity' and event['httpMethod'] == 'POST':
             return sendResponse(200, {'message' : 'success'})
 
         ### UPDATE
-        elif event['path'] == '/repo/write' and event['httpMethod'] == 'PUT':
+        elif event['path'] == '/repo/write/entity' and event['httpMethod'] == 'PUT':
             return sendResponse(200, {'message' : 'success'})
 
         ### DELETE
-        elif event['path'] == '/repo/write' and event['httpMethod'] == 'DELETE':
+        elif event['path'] == '/repo/write/entity' and event['httpMethod'] == 'DELETE':
             return sendResponse(200, {'message' : 'success'})
 
         else:
@@ -59,3 +57,5 @@ def sendResponse(code, body):
             'Content-Type' : 'application/json'
         }
     }
+
+

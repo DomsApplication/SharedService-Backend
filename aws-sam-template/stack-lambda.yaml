@@ -166,6 +166,7 @@ Resources:
               - dynamodb:GetRecords
             Resource:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DataSourceTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DataSourceTableName}/index/*
 
   # <<<<<<<  {{POLICY}} S3 bucket Full Access >>>>>>>>>>>
   LambdaS3BucketPolicy:

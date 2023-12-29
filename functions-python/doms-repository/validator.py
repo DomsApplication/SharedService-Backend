@@ -1,25 +1,34 @@
+import json
 import jsonschema
 from logger import logInfo, logDebug, logError, logException
 from repository import getItemByEntityPk
 
+# https://donofden.com/blog/2020/03/15/How-to-Validate-JSON-Schema-using-Python
+# https://json-schema.org/understanding-json-schema/reference/object
+# https://python-jsonschema.readthedocs.io/en/stable/validate/
+
 # Get a JsonSchema from the dynamodb using entity name.
 def get_schema(entityName):
     schema = getItemByEntityPk('SCHEMA', entityName)
-    return schema
+    logDebug("get_schema/schema", schema)
+    return json.loads(schema)
 
 # validate the json data from the schema
 def validateJson(entityName, json_data):
     try:
+        logDebug("validateJson/json_data", json_data)
         schema = get_schema(entityName)
+        logDebug("validateJson/schema", schema)
         errors = jsonschema.Draft202012Validator(schema).iter_errors(json_data)
         err_list = []
         for error in errors:
             err_list.append(errorMessage(str(error.absolute_path), error.message))
-        if not err_list:     
+        if not err_list:
             return True, ""        
         else:
-            return False, '\n'.join(err_list)        
+            return False, '\n'.join(err_list)
     except jsonschema.exceptions.ValidationError as err:
+        logException(err)        
         raise Exception(err)
 
 # Prepare the validation error message as human readable format.

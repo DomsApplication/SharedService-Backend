@@ -1,7 +1,7 @@
 import logging
 
 logger = logging.getLogger()
-logger.setLevel("DEBUG")
+logger.setLevel("INFO")
 
 def logInfo(key, message):
     logger.info(':::'.join([key, str(message)]))
