@@ -28,7 +28,6 @@ def validateJsonSchema(schema, json_data):
         logInfo("validateJson/json_data", json_data)
         logInfo("validateJson/schema", schema)
         errors = jsonschema.Draft202012Validator(schema).iter_errors(json_data)
-        logInfo("validateJson/errors", errors)
         err_list = []
         for error in errors:
             err_list.append(errorMessage(str(error.absolute_path), error.message))

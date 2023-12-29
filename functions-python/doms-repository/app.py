@@ -1,7 +1,7 @@
 import json
 from logger import logInfo, logDebug, logError, logException
 from validator import validateJsonSchema, get_schema
-from repository import getItemByEntityIndexPk
+from repository import getItemByEntityIndexPk, insertItem
 
 def lambda_handler(event, context):
     try:
@@ -42,6 +42,8 @@ def lambda_handler(event, context):
                 if dbItem is not None: 
                     message = f"Item '{pk}' is already exists for the entity {entityName}."
                     return sendResponse(406, {'message' : message})
+
+                insertItem(entityName, pk, 1, requestBody)
 
                 message = f"Item '{pk}' is created successfully for the entity {entityName}."                    
                 return sendResponse(201, {'message' : message})

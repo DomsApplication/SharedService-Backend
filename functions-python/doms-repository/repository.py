@@ -1,8 +1,9 @@
 import os
 import boto3
-from boto3.dynamodb.conditions import Key, Attr, FilterExpression
+from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from logger import logInfo, logDebug, logError, logException
+from utlities import getDateTimeNow
 
 # https://www.fernandomc.com/posts/ten-examples-of-getting-data-from-dynamodb-with-python-and-boto3/
 # https://stackoverflow.com/questions/35758924/how-do-we-query-on-a-secondary-index-of-dynamodb-using-boto3
@@ -46,5 +47,29 @@ def getItemByEntityIndexPk(entity, pk):
             return response['Items'][0]['PAYLOAD']['S']
     except ClientError as err:
         exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {pk} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        logException(exception_value)
+        raise ValueError(exception_value)
+
+def insertItem(entity, pk, version, payload):
+    try:
+        item = {
+            "PK" : pk,
+            "SK" : pk,
+            "ENTITIES" : entity,
+            "MAPPINGS" : entity,
+            "VERSION" : version,
+            "PAYLOAD" : payload,
+            "CREATED_BY" : "task_user",
+            "CREATED_ON" : str(getDateTimeNow()),
+            "MODIFIED_BY" : "task_user",
+            "MODIFIED_ON" : str(getDateTimeNow()),
+        }
+        response = dynamodb.put_item(
+            TableName = DDB_TABLE_NAME,
+            Item = item
+        )
+        return response['ResponseMetadata']['HTTPStatusCode']
+    except ClientError as err:
+        exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {pk}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logException(exception_value)
         raise ValueError(exception_value)
