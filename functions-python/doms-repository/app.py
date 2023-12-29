@@ -15,9 +15,12 @@ def lambda_handler(event, context):
             
             requestBody = json.loads(event['body'])
             entityName = requestBody['entity']
+            logInfo("app/requestBody", requestBody)
+            logInfo("app/entityName", entityName)
 
             entitySchema = get_schema(entityName)
             is_valid, message = validateJsonSchema(entitySchema, requestBody)
+            logInfo("app/is_valid", is_valid)
             if not is_valid:
                 return sendResponse(400, {'error' : message})
 

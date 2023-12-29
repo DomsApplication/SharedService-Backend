@@ -10,7 +10,7 @@ from repository import getItemByEntityIndexPk
 # Get a JsonSchema from the dynamodb using entity name.
 def get_schema(entityName):
     schema = getItemByEntityIndexPk('SCHEMA', entityName)
-    logDebug("get_schema/schema", schema)
+    logInfo("get_schema/schema", schema)
     return json.loads(schema)
 
 # validate the json data from the entity name
@@ -25,9 +25,10 @@ def validateJsonEntityName(entityName, json_data):
 # validate the json data from the schema
 def validateJsonSchema(schema, json_data):
     try:
-        logDebug("validateJson/json_data", json_data)
-        logDebug("validateJson/schema", schema)
+        logInfo("validateJson/json_data", json_data)
+        logInfo("validateJson/schema", schema)
         errors = jsonschema.Draft202012Validator(schema).iter_errors(json_data)
+        logInfo("validateJson/errors", errors)
         err_list = []
         for error in errors:
             err_list.append(errorMessage(str(error.absolute_path), error.message))

@@ -28,13 +28,23 @@ def getItemByEntityIndexPk(entity, pk):
                 },
                 ":_pk" : {
                     'S' :  str(pk)
+                },
+                ":_sk" : {
+                    'S' :  str(pk)
                 }
             },
-            KeyConditionExpression = 'ENTITIES = :_ENTITIES and PK = :_pk'
+            KeyConditionExpression = 'ENTITIES = :_ENTITIES and PK = :_pk and SK = :_sk'
         )
-        if 'Items' in response and len(response['Items']) > 0:
+        if 'Items' in response and len(response['Items']) == 0:
+            exception_value = f"Item not found in {DDB_TABLE_NAME} for pk: {pk} by index: 'ENTITIES-IDX'"
+            logException(exception_value)
+            raise ValueError(exception_value)
+        elif 'Items' in response and len(response['Items']) > 1:
+            exception_value = f"Duplciated item found in {DDB_TABLE_NAME} for pk: {pk} by index: 'ENTITIES-IDX'"
+            logException(exception_value)
+            raise ValueError(exception_value)
+        else:
             return response['Items'][0]['PAYLOAD']['S']
-        return ''
     except ClientError as err:
         exception_value = f"Can not query shavika-doms-backend-doms by index: 'ENTITIES-IDX', {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logException(exception_value)
