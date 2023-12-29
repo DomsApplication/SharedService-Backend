@@ -53,16 +53,16 @@ def getItemByEntityIndexPk(entity, pk):
 def insertItem(entity, pk, version, payload):
     try:
         item = {
-            "PK" : pk,
-            "SK" : pk,
-            "ENTITIES" : entity,
-            "MAPPINGS" : entity,
-            "VERSION" : version,
-            "PAYLOAD" : payload,
-            "CREATED_BY" : "task_user",
-            "CREATED_ON" : str(getDateTimeNow()),
-            "MODIFIED_BY" : "task_user",
-            "MODIFIED_ON" : str(getDateTimeNow()),
+            "PK" : { 'S' :  str(pk) },
+            "SK" : { 'S' :  str(pk) },
+            "ENTITIES" : { 'S' :  str(entity) },
+            "MAPPINGS" : { 'S' :  str(entity) },
+            "VERSION" : { 'N' :  version },
+            "PAYLOAD" : { 'S' :  payload },
+            "CREATED_BY" : { 'S' :  "task_user" },
+            "CREATED_ON" : { 'S' :  str(getDateTimeNow()) },
+            "MODIFIED_BY" : { 'S' :  "task_user" },
+            "MODIFIED_ON" : { 'S' :  str(getDateTimeNow()) },
         }
         response = dynamodb.put_item(
             TableName = DDB_TABLE_NAME,
