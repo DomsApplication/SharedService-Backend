@@ -17,13 +17,11 @@ def lambda_handler(event, context):
 
             if 'body' not in event:
                 return sendResponse(400, {'message' : "Request body was missed. Kindly provide in json format."})
-            
             requestBody = json.loads(event['body'])
 
             #
             #TODO: need to handle separate the parent & child entity and do validation. 
             #
-            logInfo("validateJson/BEFORE", requestBody)    
             is_valid, message = validateJson("user", requestBody)
             if not is_valid:
                 return sendResponse(400, {'error' : message})
@@ -59,3 +57,5 @@ def sendResponse(code, body):
             'Content-Type' : 'application/json'
         }
     }
+
+

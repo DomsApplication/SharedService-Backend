@@ -6,14 +6,15 @@ from repository import getItemByEntityPk
 # Get a JsonSchema from the dynamodb using entity name.
 def get_schema(entityName):
     schema = getItemByEntityPk('SCHEMA', entityName)
+    logInfo("get_schema/schema", schema)
     return json.loads(schema)
 
 # validate the json data from the schema
 def validateJson(entityName, json_data):
     try:
+        logInfo("validateJson/json_data", json_data)
         schema = get_schema(entityName)
         logInfo("validateJson/schema", schema)
-        logInfo("validateJson/json_data", json_data)
         errors = jsonschema.Draft202012Validator(schema).iter_errors(json_data)
         err_list = []
         for error in errors:
