@@ -13,7 +13,23 @@ def lambda_handler(event, context):
         logInfo('httpMethod', event['httpMethod'])
         logInfo('body', event['body'])
 
-        if event['path'] == '/api/repo/entity':
+        if event['path'] == '/api/repo/schema':
+            if event['httpMethod'] == 'POST':
+                requestBody = json.loads(event['body'])
+                if 'entity' not in requestBody:
+                    return sendResponse(400, {'error' : f"'entity' field is missed in request body."})
+                entityName = requestBody['entity']
+
+                insertItem("SCHEMA", entityName, 1, requestBody)
+
+                message = f"Schema '{entityName}' is created successfully."                    
+                return sendResponse(201, {'message' : message})
+            
+            else:
+                msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
+                return sendResponse(405, msg)    
+
+        elif event['path'] == '/api/repo/entity':
 
             requestBody = json.loads(event['body'])
             if 'entity' not in requestBody:
