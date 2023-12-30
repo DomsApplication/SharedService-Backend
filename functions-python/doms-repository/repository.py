@@ -83,6 +83,7 @@ def updateItem(entity, pk, version, payload):
                 'PK': {'S': pk},
                 'SK': {'S': pk}
             },
+            ConditionExpression = 'ENTITIES = :_ENTITIES',
             UpdateExpression='SET  #payload = :payload, #version = :version, #modifiedby = :modifiedby, #modifiedon = :modifiedon',
             ExpressionAttributeNames = {
                 '#payload': 'PAYLOAD',
@@ -94,8 +95,9 @@ def updateItem(entity, pk, version, payload):
                 ':payload': {'S' : json.dumps(payload)},
                 ':version': {'S' : str(version)},
                 ':modifiedby': {'S' : 'task_user'},
-                ':modifiedon': {'S' : str(getDateTimeNow())}
-                },  
+                ':modifiedon': {'S' : str(getDateTimeNow())},
+                ':_ENTITIES' : {'S' : str(entity)}
+            },  
             ReturnValues='ALL_NEW'  
         )
         return response['ResponseMetadata']['HTTPStatusCode']
@@ -110,12 +112,8 @@ def deleteItem(entity, pk):
         response = dynamodb_client.delete_item(
             TableName=DDB_TABLE_NAME,
             Key={
-                'PK': {
-                    'S': str(pk),
-                },
-                'SK': {
-                    'S': str(pk),
-                },
+                'PK': { 'S': str(pk), },
+                'SK': { 'S': str(pk), }
             },
             ConditionExpression='ENTITIES = :_ENTITIES',
             ExpressionAttributeValues = {

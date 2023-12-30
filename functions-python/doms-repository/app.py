@@ -93,6 +93,8 @@ def lambda_handler(event, context):
                     message = f"Item '{pk}' is not exists for the entity {entityName}."
                     return sendResponse(406, {'message' : message})
 
+                deleteItem(entityName, pk)
+
                 message = f"Item '{pk}' is deleted successfully for the entity {entityName}."                    
                 return sendResponse(204, {'message' : message})
 
