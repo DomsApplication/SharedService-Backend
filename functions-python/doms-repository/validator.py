@@ -11,6 +11,8 @@ from repository import getItemByEntityIndexPk
 def get_schema(entityName):
     schema = getItemByEntityIndexPk('SCHEMA', entityName)
     logInfo("get_schema/schema", schema)
+    if schema is None:
+        raise Exception(f"'Schema with the name '{entityName}' not exists.")
     return json.loads(schema)
 
 # validate the json data from the entity name

@@ -22,8 +22,6 @@ def lambda_handler(event, context):
             
             # Getting schema from DB
             entitySchema = get_schema(entityName)
-            if entitySchema is None:
-                return sendResponse(400, {'error' : f"'Schema with the name '{entityName}' not exists."})
             if 'version' not in entitySchema:
                 return sendResponse(400, {'error' : f"'version' field is missed in Schema {entityName}."})
             if 'uniquekey' not in entitySchema['properties']['entity']['uniquekey']:
