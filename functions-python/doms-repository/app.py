@@ -40,7 +40,7 @@ def lambda_handler(event, context):
             entitySchema = get_schema(entityName)
             if 'version' not in entitySchema:
                 return sendResponse(400, {'error' : f"'version' field is missed in Schema {entityName}."})
-            if 'uniquekey' not in entitySchema['properties']['entity']['uniquekey']:
+            if 'uniquekey' not in entitySchema['properties']['entity']:
                 return sendResponse(400, {'error' : f"'entity.uniquekey' field is missed in Schema {entityName}."})
 
             uniquekey = entitySchema['properties']['entity']['uniquekey']
