@@ -75,6 +75,36 @@ def insertItem(entity, pk, version, payload):
         logException(exception_value)
         raise ValueError(exception_value)
 
+def updateItem(entity, pk, version, payload):
+    try:
+        response = dynamodb_client.update_item(
+            TableName=DDB_TABLE_NAME,
+            Key={
+                'PK': {'S': pk},
+                'SK': {'S': pk}
+            },
+            ConditionExpression = 'ENTITIES = :_ENTITIES',
+            UpdateExpression='SET  #payload = :payload, #version = :version, #modifiedby = :modifiedby, #modifiedon = :modifiedon',
+            ExpressionAttributeNames = {
+                '#payload': 'PAYLOAD',
+                '#version': 'VERSION', 
+                '#modifiedby':'MODIFIED_BY', 
+                '#modifiedon':'MODIFIED_ON'
+                },  
+            ExpressionAttributeValues =  {
+                ':payload': {'S' : json.dumps(payload)},
+                ':version': {'S' : str(version)},
+                ':modifiedby': {'S' : 'task_user'},
+                ':modifiedon': {'S' : str(getDateTimeNow())},
+                ':_ENTITIES' : {'S' : str(entity)}
+            },  
+            ReturnValues='ALL_NEW'  
+        )
+        return response['ResponseMetadata']['HTTPStatusCode']
+    except ClientError as err:
+        exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {pk}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        logException(exception_value)
+        raise ValueError(exception_value)
 
 
 def deleteItem(entity, pk):
@@ -82,14 +112,10 @@ def deleteItem(entity, pk):
         response = dynamodb_client.delete_item(
             TableName=DDB_TABLE_NAME,
             Key={
-                'PK': {
-                    'S': str(pk),
-                },
-                'SK': {
-                    'S': str(pk),
-                },
+                'PK': { 'S': str(pk), },
+                'SK': { 'S': str(pk), }
             },
-            ExpressionAttributeNames='ENTITIES = :_ENTITIES',
+            ConditionExpression='ENTITIES = :_ENTITIES',
             ExpressionAttributeValues = {
                 ":_ENTITIES" : {
                     'S' :  str(entity)
