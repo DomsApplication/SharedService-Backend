@@ -29,6 +29,21 @@ def lambda_handler(event, context):
                 msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
                 return sendResponse(405, msg)    
 
+        elif verifyPathwithParameters(event['path'], '/api/repo/schema/*'):
+            if event['httpMethod'] == 'GET':
+                list = getPathwithParameters(event['path'], '/api/repo/schema/*')
+                if len(list) == 0:
+                    return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
+                uniq_pk = list[0]
+                schemaItem = getItemByEntityIndexPk('SCHEMA', uniq_pk)
+                if schemaItem is None:
+                    return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
+                return sendResponse(200, json.loads(schemaItem))
+
+            else:
+                msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
+                return sendResponse(405, msg)    
+
         elif event['path'] == '/api/repo/entity':
 
             requestBody = json.loads(event['body'])
@@ -148,3 +163,29 @@ def sendResponse(code, body):
             'Content-Type' : 'application/json'
         }
     }
+
+def verifyPathwithParameters(path, pathParam):
+    try:
+        paths = path.split('/')
+        pathParams = pathParam.split('/')
+        if len(paths) == len(pathParams):
+            return True
+        else:
+            return False
+    except Exception as error:
+        logError('Exception in verifyPathwithParameters function', error)
+        return False
+
+def getPathwithParameters(path, pathParam):
+    try:
+        paths = path.split('/')
+        pathParams = pathParam.split('/')
+        list = []
+        if len(paths) == len(pathParams):
+            for num in range(0, len(paths)):
+                if paths[num] != pathParams[num] and '*' == pathParams[num]:
+                    list.append[paths[num]]
+        return list
+    except Exception as error:
+        logError('Exception in getPathwithParameters function', error)
+        raise Exception(error)
