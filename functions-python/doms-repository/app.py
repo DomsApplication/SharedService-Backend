@@ -20,6 +20,11 @@ def lambda_handler(event, context):
                     return sendResponse(400, {'error' : f"'entity' field is missed in request body."})
                 entityName = requestBody['entity']
 
+                _dbItem = getItemByEntityIndexPk("SCHEMA", entityName)
+                if _dbItem is None: 
+                    message = f"Item '{entityName}' is not exists for the 'SCHEMA'."
+                    return sendResponse(406, {'message' : message})
+
                 insertItem("SCHEMA", entityName, 1, requestBody)
 
                 message = f"Schema '{entityName}' is created successfully."                    
@@ -30,15 +35,21 @@ def lambda_handler(event, context):
                 return sendResponse(405, msg)    
 
         elif verifyPathwithParameters(event['path'], '/api/repo/schema/*'):
+            list = getPathwithParameters(event['path'], '/api/repo/schema/*')
+            if len(list) == 0:
+                return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
+            uniq_pk = list[0]
+
             if event['httpMethod'] == 'GET':
-                list = getPathwithParameters(event['path'], '/api/repo/schema/*')
-                if len(list) == 0:
-                    return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
-                uniq_pk = list[0]
                 schemaItem = getItemByEntityIndexPk('SCHEMA', uniq_pk)
                 if schemaItem is None:
                     return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
                 return sendResponse(200, json.loads(schemaItem))
+                
+            elif event['httpMethod'] == 'DELETE':
+                deleteItem('SCHEMA', uniq_pk)
+                message = f"Item '{uniq_pk}' is deleted successfully for the 'SCHEMA'."                    
+                return sendResponse(204, {'message' : message})
 
             else:
                 msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
@@ -184,7 +195,7 @@ def getPathwithParameters(path, pathParam):
         if len(paths) == len(pathParams):
             for num in range(0, len(paths)):
                 if paths[num] != pathParams[num] and '*' == pathParams[num]:
-                    list.append[paths[num]]
+                    list.append(str(paths[num]))
         return list
     except Exception as error:
         logError('Exception in getPathwithParameters function', error)
