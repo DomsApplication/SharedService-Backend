@@ -1,7 +1,7 @@
 import json
 from logger import logInfo, logDebug, logError, logException
 from validator import validateJsonSchema, get_schema
-from repository import getItemByEntityIndexPk, insertItem
+from repository import getItemByEntityIndexPk, insertItem, updateItem, deleteItem
 
 def lambda_handler(event, context):
     try:
@@ -13,28 +13,36 @@ def lambda_handler(event, context):
         logInfo('body', event['body'])
 
         if event['path'] == '/repo/write/entity':
-            
+
             requestBody = json.loads(event['body'])
+            if 'entity' not in requestBody:
+                return sendResponse(400, {'error' : f"'entity' field is missed in request body."})
             entityName = requestBody['entity']
+            
+            # Getting schema from DB
+            entitySchema = get_schema(entityName)
+
+            if 'version' not in entitySchema:
+                return sendResponse(400, {'error' : f"'version' field is missed in Schema {entityName}."})
+            if 'uniquekey' not in entitySchema['properties']['entity']['uniquekey']:
+                return sendResponse(400, {'error' : f"'entity.uniquekey' field is missed in Schema {entityName}."})
+
+            uniquekey = entitySchema['properties']['entity']['uniquekey']
+            version = entitySchema['version']
+
+            if uniquekey not in requestBody:
+                return sendResponse(400, {'error' : f"'{uniquekey}' field is missed in requesy body."})
+            pk = requestBody[uniquekey]
+
             logInfo("app/requestBody", requestBody)
             logInfo("app/entityName", entityName)
-
-            try:                
-                entitySchema = get_schema(entityName)
-            except Exception as error:
-                logError('Exception in fetch schema', error)
-                return sendResponse(400, {'error' : f"Schema {entityName} not found."})
-
-            is_valid, message = validateJsonSchema(entitySchema, requestBody)
-            logInfo("app/is_valid", is_valid)
-            if not is_valid:
-                return sendResponse(400, {'error' : message})
-
-            pk = requestBody['user_id']
+            logInfo("app/schema.version", version)
+            logInfo("app/schema.properties.entityuniquekey", uniquekey)
             logInfo("app/pk", pk)
+
             dbItem = getItemByEntityIndexPk(entityName, pk)
             logInfo("app/dbItem", dbItem)
-            
+
             #
             # ******** Validate the input json with schame *****************
             ### INSERT
@@ -43,7 +51,16 @@ def lambda_handler(event, context):
                     message = f"Item '{pk}' is already exists for the entity {entityName}."
                     return sendResponse(406, {'message' : message})
 
-                insertItem(entityName, pk, 1, requestBody)
+                try:                
+                    is_valid, message = validateJsonSchema(entitySchema, requestBody)
+                    logInfo("app/is_valid", is_valid)
+                    if not is_valid:
+                        return sendResponse(400, {'error' : message})
+                except Exception as error:
+                    logError('Exception in fetch schema', error)
+                    return sendResponse(400, {'error' : f"Schema {entityName} not found."})
+
+                insertItem(entityName, pk, version, requestBody)
 
                 message = f"Item '{pk}' is created successfully for the entity {entityName}."                    
                 return sendResponse(201, {'message' : message})
@@ -53,6 +70,19 @@ def lambda_handler(event, context):
                 if dbItem is None: 
                     message = f"Item '{pk}' is not exists for the entity {entityName}."
                     return sendResponse(406, {'message' : message})
+
+                try:
+                    ddbPayloadObject = json.loads(dbItem)
+                    ddbPayloadObject.update(requestBody) #updating the attributes(key,values) present in payload                
+                    is_valid, message = validateJsonSchema(entitySchema, ddbPayloadObject)
+                    logInfo("app/is_valid", is_valid)
+                    if not is_valid:
+                        return sendResponse(400, {'error' : message})
+                except Exception as error:
+                    logError('Exception in fetch schema', error)
+                    return sendResponse(400, {'error' : f"Schema {entityName} not found."})
+
+                updateItem(entityName, pk, version, ddbPayloadObject)
 
                 message = f"Item '{pk}' is updated successfully for the entity {entityName}."                    
                 return sendResponse(204, {'message' : message})
@@ -86,5 +116,3 @@ def sendResponse(code, body):
             'Content-Type' : 'application/json'
         }
     }
-
-
