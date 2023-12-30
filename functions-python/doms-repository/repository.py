@@ -25,7 +25,7 @@ def getItemByEntityIndexPk(entity, pk):
             TableName = DDB_TABLE_NAME,
             IndexName = 'ENTITIES_INX',
             KeyConditionExpression = 'ENTITIES = :_ENTITIES and PK = :_pk',
-            FilterExpression = 'SK = :_sk',
+            FilterExpression = 'SK = :_sk and IS_DELETED = :IS_DELETED',
             ExpressionAttributeValues = {
                 ":_ENTITIES" : {
                     'S' :  str(entity)
@@ -35,6 +35,9 @@ def getItemByEntityIndexPk(entity, pk):
                 },
                 ":_sk" : {
                     'S' :  str(pk)
+                },
+                ":IS_DELETED" : {
+                    'BOOL' :  False
                 }
             }
         )
@@ -59,6 +62,7 @@ def insertItem(entity, pk, version, payload):
             "ENTITIES" : { 'S' :  entity },
             "MAPPINGS" : { 'S' :  entity },
             "VERSION" : { 'N' :  str(version) },
+            "IS_DELETED" : { 'BOOL' :  False },
             "PAYLOAD" : { 'S' :  json.dumps(payload) },
             "CREATED_BY" : { 'S' :  "task_user" },
             "CREATED_ON" : { 'S' :  str(getDateTimeNow()) },
