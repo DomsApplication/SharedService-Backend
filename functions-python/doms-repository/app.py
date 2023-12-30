@@ -8,11 +8,54 @@ def lambda_handler(event, context):
         if 'path' not in event or 'httpMethod' not in event:
             return sendResponse(400, {'message' : 'Application service expecting http request.'})
 
+        logInfo('event', event)
         logInfo('Path', event['path'])
         logInfo('httpMethod', event['httpMethod'])
         logInfo('body', event['body'])
 
-        if event['path'] == '/repo/write/entity':
+        if event['path'] == '/api/repo/schema':
+            if event['httpMethod'] == 'POST':
+                requestBody = json.loads(event['body'])
+                if 'entity' not in requestBody:
+                    return sendResponse(400, {'error' : f"'entity' field is missed in request body."})
+                entityName = requestBody['entity']
+
+                _dbItem = getItemByEntityIndexPk("SCHEMA", entityName)
+                if _dbItem is not None: 
+                    message = f"Item '{entityName}' is not exists for the 'SCHEMA'."
+                    return sendResponse(406, {'message' : message})
+
+                insertItem("SCHEMA", entityName, 1, requestBody)
+
+                message = f"Schema '{entityName}' is created successfully."                    
+                return sendResponse(201, {'message' : message})
+            
+            else:
+                msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
+                return sendResponse(405, msg)    
+
+        elif verifyPathwithParameters(event['path'], '/api/repo/schema/*'):
+            list = getPathwithParameters(event['path'], '/api/repo/schema/*')
+            if len(list) == 0:
+                return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
+            uniq_pk = list[0]
+
+            if event['httpMethod'] == 'GET':
+                schemaItem = getItemByEntityIndexPk('SCHEMA', uniq_pk)
+                if schemaItem is None:
+                    return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
+                return sendResponse(200, json.loads(schemaItem))
+
+            elif event['httpMethod'] == 'DELETE':
+                deleteItem('SCHEMA', uniq_pk)
+                message = f"Item '{uniq_pk}' is deleted successfully for the 'SCHEMA'."                    
+                return sendResponse(204, {'message' : message})
+
+            else:
+                msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
+                return sendResponse(405, msg)    
+
+        elif event['path'] == '/api/repo/entity':
 
             requestBody = json.loads(event['body'])
             if 'entity' not in requestBody:
@@ -21,10 +64,9 @@ def lambda_handler(event, context):
             
             # Getting schema from DB
             entitySchema = get_schema(entityName)
-
             if 'version' not in entitySchema:
                 return sendResponse(400, {'error' : f"'version' field is missed in Schema {entityName}."})
-            if 'uniquekey' not in entitySchema['properties']['entity']['uniquekey']:
+            if 'uniquekey' not in entitySchema['properties']['entity']:
                 return sendResponse(400, {'error' : f"'entity.uniquekey' field is missed in Schema {entityName}."})
 
             uniquekey = entitySchema['properties']['entity']['uniquekey']
@@ -101,9 +143,23 @@ def lambda_handler(event, context):
             else:
                 msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
                 return sendResponse(405, msg)    
+        
+        # Get query the data from dynamodb        
+        elif event['path'].startswith('/api/repo/record/'):
+            ### GET
+            if event['httpMethod'] == 'GET':
+                requestEntityName = event['path'].replace('/api/repo/record/', '')
+                logInfo("app/requestEntityName", requestEntityName)
+
+                return sendResponse(201, {'message' : 'success'})
+            else:
+                msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
+                return sendResponse(405, msg)    
+
         else:    
             msg = {'message' : 'Path :' + event['path'] + ' not found.'}
             return sendResponse(404, msg)
+
     except Exception as error:
         logError('Exception in main function', error)
         return sendResponse(500, {'error' : str(error)})
@@ -118,3 +174,29 @@ def sendResponse(code, body):
             'Content-Type' : 'application/json'
         }
     }
+
+def verifyPathwithParameters(path, pathParam):
+    try:
+        paths = path.split('/')
+        pathParams = pathParam.split('/')
+        if len(paths) == len(pathParams):
+            return True
+        else:
+            return False
+    except Exception as error:
+        logError('Exception in verifyPathwithParameters function', error)
+        return False
+
+def getPathwithParameters(path, pathParam):
+    try:
+        paths = path.split('/')
+        pathParams = pathParam.split('/')
+        list = []
+        if len(paths) == len(pathParams):
+            for num in range(0, len(paths)):
+                if paths[num] != pathParams[num] and '*' == pathParams[num]:
+                    list.append(str(paths[num]))
+        return list
+    except Exception as error:
+        logError('Exception in getPathwithParameters function', error)
+        raise Exception(error)
