@@ -21,7 +21,7 @@ def lambda_handler(event, context):
                 entityName = requestBody['entity']
 
                 _dbItem = getItemByEntityIndexPk("SCHEMA", entityName)
-                if _dbItem is None: 
+                if _dbItem is not None: 
                     message = f"Item '{entityName}' is not exists for the 'SCHEMA'."
                     return sendResponse(406, {'message' : message})
 
@@ -45,7 +45,7 @@ def lambda_handler(event, context):
                 if schemaItem is None:
                     return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
                 return sendResponse(200, json.loads(schemaItem))
-                
+
             elif event['httpMethod'] == 'DELETE':
                 deleteItem('SCHEMA', uniq_pk)
                 message = f"Item '{uniq_pk}' is deleted successfully for the 'SCHEMA'."                    
