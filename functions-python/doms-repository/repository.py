@@ -1,4 +1,5 @@
 import os
+import json
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
@@ -53,20 +54,47 @@ def getItemByEntityIndexPk(entity, pk):
 def insertItem(entity, pk, version, payload):
     try:
         item = {
-            "PK" : pk,
-            "SK" : pk,
-            "ENTITIES" : entity,
-            "MAPPINGS" : entity,
-            "VERSION" : version,
-            "PAYLOAD" : payload,
-            "CREATED_BY" : "task_user",
-            "CREATED_ON" : str(getDateTimeNow()),
-            "MODIFIED_BY" : "task_user",
-            "MODIFIED_ON" : str(getDateTimeNow()),
+            "PK" : { 'S' : pk },
+            "SK" : { 'S' : pk },
+            "ENTITIES" : { 'S' :  entity },
+            "MAPPINGS" : { 'S' :  entity },
+            "VERSION" : { 'N' :  str(version) },
+            "PAYLOAD" : { 'S' :  json.dumps(payload) },
+            "CREATED_BY" : { 'S' :  "task_user" },
+            "CREATED_ON" : { 'S' :  str(getDateTimeNow()) },
+            "MODIFIED_BY" : { 'S' :  "task_user" },
+            "MODIFIED_ON" : { 'S' :  str(getDateTimeNow()) },
         }
-        response = dynamodb.put_item(
+        response = dynamodb_client.put_item(
             TableName = DDB_TABLE_NAME,
             Item = item
+        )
+        return response['ResponseMetadata']['HTTPStatusCode']
+    except ClientError as err:
+        exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {pk}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        logException(exception_value)
+        raise ValueError(exception_value)
+
+
+
+def deleteItem(entity, pk):
+    try:
+        response = dynamodb_client.delete_item(
+            TableName=DDB_TABLE_NAME,
+            Key={
+                'PK': {
+                    'S': str(pk),
+                },
+                'SK': {
+                    'S': str(pk),
+                },
+            },
+            ExpressionAttributeNames='ENTITIES = :_ENTITIES',
+            ExpressionAttributeValues = {
+                ":_ENTITIES" : {
+                    'S' :  str(entity)
+                }
+            }
         )
         return response['ResponseMetadata']['HTTPStatusCode']
     except ClientError as err:
