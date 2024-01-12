@@ -2,6 +2,7 @@ import json
 import jsonschema
 from logger import logInfo, logDebug, logError, logException
 from repository import getItemByEntityIndexPk
+import DomsException
 
 # https://donofden.com/blog/2020/03/15/How-to-Validate-JSON-Schema-using-Python
 # https://json-schema.org/understanding-json-schema/reference/object
@@ -12,7 +13,7 @@ def get_schema(entityName):
     schema = getItemByEntityIndexPk('SCHEMA', entityName)
     logInfo("get_schema/schema", schema)
     if schema is None:
-        raise Exception(f"'Schema with the name '{entityName}' not exists.")
+        raise DomsException(400, f"'Schema with the name '{entityName}' not exists.")
     return json.loads(schema)
 
 # validate the json data from the entity name
