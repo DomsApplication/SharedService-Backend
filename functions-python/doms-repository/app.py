@@ -4,7 +4,7 @@ from validator import validateJsonSchema, get_schema
 from repository import getItemByEntityIndexPk, insertItem, updateItem, deleteItem
 import DomsException
 
-def lambda_handler1(event, context):
+def lambda_handler(event, context):
     try:
         if 'path' not in event or 'httpMethod' not in event:
             return sendResponse(400, {'message' : 'Application service expecting http request.'})
