@@ -13,7 +13,10 @@ def lambda_handler(event, context):
         logInfo('httpMethod', event['httpMethod'])
         logInfo('body', event['body'])
 
+        ##### /api/repo/schema ##############################################   
         if event['path'] == '/api/repo/schema':
+
+            ##### [POST] #####################################   
             if event['httpMethod'] == 'POST':
                 requestBody = json.loads(event['body'])
                 if 'entity' not in requestBody:
@@ -34,18 +37,21 @@ def lambda_handler(event, context):
                 msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
                 return sendResponse(405, msg)    
 
+        ##### /api/repo/schema/{pk} ##############################################   
         elif verifyPathwithParameters(event['path'], '/api/repo/schema/*'):
             list = getPathwithParameters(event['path'], '/api/repo/schema/*')
             if len(list) == 0:
                 return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
             uniq_pk = list[0]
 
+            ##### [GET] #####################################
             if event['httpMethod'] == 'GET':
                 schemaItem = getItemByEntityIndexPk('SCHEMA', uniq_pk)
                 if schemaItem is None:
                     return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
                 return sendResponse(200, json.loads(schemaItem))
 
+            ##### [DELETE] #####################################
             elif event['httpMethod'] == 'DELETE':
                 deleteItem('SCHEMA', uniq_pk)
                 message = f"Item '{uniq_pk}' is deleted successfully for the 'SCHEMA'."                    
@@ -55,6 +61,7 @@ def lambda_handler(event, context):
                 msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
                 return sendResponse(405, msg)    
 
+        ##### /api/repo/entity ##############################################   
         elif event['path'] == '/api/repo/entity':
 
             requestBody = json.loads(event['body'])
@@ -85,9 +92,7 @@ def lambda_handler(event, context):
             dbItem = getItemByEntityIndexPk(entityName, pk)
             logInfo("app/dbItem", dbItem)
 
-            #
-            # ******** Validate the input json with schame *****************
-            ### INSERT
+            ##### [POST] #####################################
             if event['httpMethod'] == 'POST':
                 if dbItem is not None: 
                     message = f"Item '{pk}' is already exists for the entity {entityName}."
@@ -107,7 +112,7 @@ def lambda_handler(event, context):
                 message = f"Item '{pk}' is created successfully for the entity {entityName}."                    
                 return sendResponse(201, {'message' : message})
 
-            ### UPDATE
+            ##### [UPDATE] #####################################
             elif event['httpMethod'] == 'PUT':
                 if dbItem is None: 
                     message = f"Item '{pk}' is not exists for the entity {entityName}."
@@ -129,7 +134,7 @@ def lambda_handler(event, context):
                 message = f"Item '{pk}' is updated successfully for the entity {entityName}."                    
                 return sendResponse(204, {'message' : message})
 
-            ### DELETE
+            ##### [DELETE] #####################################
             elif event['httpMethod'] == 'DELETE':
                 if dbItem is None: 
                     message = f"Item '{pk}' is not exists for the entity {entityName}."
@@ -144,14 +149,20 @@ def lambda_handler(event, context):
                 msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
                 return sendResponse(405, msg)    
         
-        # Get query the data from dynamodb        
-        elif event['path'].startswith('/api/repo/record/'):
-            ### GET
-            if event['httpMethod'] == 'GET':
-                requestEntityName = event['path'].replace('/api/repo/record/', '')
-                logInfo("app/requestEntityName", requestEntityName)
+        ##### /api/repo/{entity}/{pk} ##############################################        
+        elif verifyPathwithParameters(event['path'], '/api/repo/*/*'):
+            list = getPathwithParameters(event['path'], '/api/repo/*/*')
+            if len(list) == 0:
+                return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
+            _entity = list[0]
+            uniq_pk = list[1]
 
-                return sendResponse(201, {'message' : 'success'})
+            ##### [GET] #####################################
+            if event['httpMethod'] == 'GET':
+                schemaItem = getItemByEntityIndexPk(_entity, uniq_pk)
+                if schemaItem is None:
+                    return sendResponse(500, {'error' : f"Not able to read the path-patameter for the path {event['path']}"})
+                return sendResponse(200, json.loads(schemaItem))
             else:
                 msg = {'message' : 'Method: ' + event['httpMethod'] + ' not allowed for the requested path:' + event['path'] }
                 return sendResponse(405, msg)    
