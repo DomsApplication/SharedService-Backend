@@ -47,3 +47,31 @@ def errorMessage(path, message):
     path = path.replace("deque(", "")
     path = path.replace(")", "")
     return ' : '.join([path, message])
+
+# Get a list of fields which is True of searchable.
+def getSearchFieldsByEntityName(entityName, payload):
+    return getSearchFields(get_schema(entityName), payload)
+
+# Get a list of fields which is True of searchable.
+def getSearchFields(_entitySchema, payload):
+    searchableList = []
+    # Loop along dictionary keys
+    for field_key in _entitySchema['properties']:
+        field = _entitySchema['properties'][field_key]
+        if field['searchable'] is True:
+            ply_key = field_key
+            ply_type = field['type']
+            ply_value = payload[field_key]
+            item = {}
+            item[ply_key] = ply_value
+            item['type'] = ply_type
+            searchableList.append(item)
+    return searchableList
+
+# List the field which is required in the schema
+#https://stackoverflow.com/questions/31750725/get-required-fields-from-json-schema
+def required_dict(schema):
+    return {
+        key: key in schema['required']
+        for key in schema['properties']
+    }
