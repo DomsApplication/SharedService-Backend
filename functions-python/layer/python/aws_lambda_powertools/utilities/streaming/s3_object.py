@@ -4,18 +4,17 @@ import io
 from typing import (
     IO,
     TYPE_CHECKING,
-    Any,
+    AnyStr,
     Iterable,
     List,
     Optional,
     Sequence,
-    TypeVar,
-    Union,
     cast,
     overload,
 )
 
-from aws_lambda_powertools.shared.types import Literal
+from typing_extensions import Literal
+
 from aws_lambda_powertools.utilities.streaming._s3_seekable_io import _S3SeekableIO
 from aws_lambda_powertools.utilities.streaming.transformations import (
     CsvTransform,
@@ -27,11 +26,7 @@ from aws_lambda_powertools.utilities.streaming.transformations.base import (
 )
 
 if TYPE_CHECKING:
-    from mmap import mmap
-
     from mypy_boto3_s3 import Client
-
-    _CData = TypeVar("_CData")
 
 
 # Maintenance: almost all this logic should be moved to a base class
@@ -86,11 +81,7 @@ class S3Object(IO[bytes]):
 
         # The underlying seekable IO, where all the magic happens
         self.raw_stream = _S3SeekableIO(
-            bucket=bucket,
-            key=key,
-            version_id=version_id,
-            boto3_client=boto3_client,
-            **sdk_options,
+            bucket=bucket, key=key, version_id=version_id, boto3_client=boto3_client, **sdk_options
         )
 
         # Stores the list of data transformations
@@ -139,9 +130,7 @@ class S3Object(IO[bytes]):
 
     @overload
     def transform(
-        self,
-        transformations: BaseTransform[T] | Sequence[BaseTransform[T]],
-        in_place: Literal[False],
+        self, transformations: BaseTransform[T] | Sequence[BaseTransform[T]], in_place: Literal[False]
     ) -> None:
         pass
 
@@ -150,9 +139,7 @@ class S3Object(IO[bytes]):
         pass
 
     def transform(
-        self,
-        transformations: BaseTransform[T] | Sequence[BaseTransform[T]],
-        in_place: Optional[bool] = False,
+        self, transformations: BaseTransform[T] | Sequence[BaseTransform[T]], in_place: Optional[bool] = False
     ) -> Optional[T]:
         """
         Applies one or more data transformations to the stream.
@@ -265,11 +252,8 @@ class S3Object(IO[bytes]):
     def truncate(self, size: Optional[int] = 0) -> int:
         raise NotImplementedError("this stream is not writable")
 
-    def write(self, data: Union[bytes, Union[bytearray, memoryview, Sequence[Any], "mmap", "_CData"]]) -> int:
+    def write(self, data: AnyStr) -> int:
         raise NotImplementedError("this stream is not writable")
 
-    def writelines(
-        self,
-        data: Iterable[Union[bytes, Union[bytearray, memoryview, Sequence[Any], "mmap", "_CData"]]],
-    ) -> None:
+    def writelines(self, lines: Iterable[AnyStr]) -> None:
         raise NotImplementedError("this stream is not writable")

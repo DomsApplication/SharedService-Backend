@@ -1,8 +1,8 @@
-from functools import cached_property
-from typing import Any, Dict, Iterator, Optional
+import base64
+import json
+from typing import Any, Iterator, Optional
 
 from aws_lambda_powertools.utilities.data_classes.common import DictWrapper
-from aws_lambda_powertools.utilities.data_classes.shared_functions import base64_decode
 
 
 class ActiveMQMessage(DictWrapper):
@@ -22,11 +22,14 @@ class ActiveMQMessage(DictWrapper):
     @property
     def decoded_data(self) -> str:
         """Decodes the data as a str"""
-        return base64_decode(self.data)
+        return base64.b64decode(self.data.encode()).decode()
 
-    @cached_property
+    @property
     def json_data(self) -> Any:
-        return self._json_deserializer(self.decoded_data)
+        """Parses the data as json"""
+        if self._json_data is None:
+            self._json_data = json.loads(self.decoded_data)
+        return self._json_data
 
     @property
     def connection_id(self) -> str:
@@ -51,11 +54,6 @@ class ActiveMQMessage(DictWrapper):
     def broker_out_time(self) -> int:
         """Time stamp (in milliseconds) for when the message left the broker."""
         return self["brokerOutTime"]
-
-    @property
-    def properties(self) -> dict:
-        """Custom properties"""
-        return self["properties"]
 
     @property
     def destination_physicalname(self) -> str:
@@ -110,10 +108,6 @@ class ActiveMQEvent(DictWrapper):
     - https://aws.amazon.com/blogs/compute/using-amazon-mq-as-an-event-source-for-aws-lambda/
     """
 
-    def __init__(self, data: Dict[str, Any]):
-        super().__init__(data)
-        self._messages: Optional[Iterator[ActiveMQMessage]] = None
-
     @property
     def event_source(self) -> str:
         return self["eventSource"]
@@ -126,24 +120,8 @@ class ActiveMQEvent(DictWrapper):
     @property
     def messages(self) -> Iterator[ActiveMQMessage]:
         for record in self["messages"]:
-            yield ActiveMQMessage(record, json_deserializer=self._json_deserializer)
+            yield ActiveMQMessage(record)
 
     @property
     def message(self) -> ActiveMQMessage:
-        """
-        Returns the next ActiveMQ message using an iterator
-
-        Returns
-        -------
-        ActiveMQMessage
-            The next activemq message.
-
-        Raises
-        ------
-        StopIteration
-            If there are no more records available.
-
-        """
-        if self._messages is None:
-            self._messages = self.messages
-        return next(self._messages)
+        return next(self.messages)

@@ -1,29 +1,13 @@
 import io
 import logging
-from typing import (
-    IO,
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import IO, TYPE_CHECKING, AnyStr, Iterable, List, Optional
 
 import boto3
 
-from aws_lambda_powertools.shared import user_agent
 from aws_lambda_powertools.utilities.streaming.compat import PowertoolsStreamingBody
 
 if TYPE_CHECKING:
-    from mmap import mmap
-
     from mypy_boto3_s3 import Client
-
-    _CData = TypeVar("_CData")
 
 logger = logging.getLogger(__name__)
 
@@ -48,12 +32,7 @@ class _S3SeekableIO(IO[bytes]):
     """
 
     def __init__(
-        self,
-        bucket: str,
-        key: str,
-        version_id: Optional[str] = None,
-        boto3_client=Optional["Client"],
-        **sdk_options,
+        self, bucket: str, key: str, version_id: Optional[str] = None, boto3_client=Optional["Client"], **sdk_options
     ):
         self.bucket = bucket
         self.key = key
@@ -73,7 +52,6 @@ class _S3SeekableIO(IO[bytes]):
         self._sdk_options = sdk_options
         self._sdk_options["Bucket"] = bucket
         self._sdk_options["Key"] = key
-        self._has_user_agent = False
         if version_id is not None:
             self._sdk_options["VersionId"] = version_id
 
@@ -84,9 +62,6 @@ class _S3SeekableIO(IO[bytes]):
         """
         if self._s3_client is None:
             self._s3_client = boto3.client("s3")
-        if not self._has_user_agent:
-            user_agent.register_feature_to_client(client=self._s3_client, feature="streaming")
-            self._has_user_agent = True
         return self._s3_client
 
     @property
@@ -110,7 +85,7 @@ class _S3SeekableIO(IO[bytes]):
             self._raw_stream = self.s3_client.get_object(Range=range_header, **self._sdk_options).get("Body")
             self._closed = False
 
-        return cast(PowertoolsStreamingBody, self._raw_stream)
+        return self._raw_stream
 
     def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
         """
@@ -202,11 +177,8 @@ class _S3SeekableIO(IO[bytes]):
     def truncate(self, size: Optional[int] = 0) -> int:
         raise NotImplementedError("this stream is not writable")
 
-    def write(self, data: Union[bytes, Union[bytearray, memoryview, Sequence[Any], "mmap", "_CData"]]) -> int:
+    def write(self, data: AnyStr) -> int:
         raise NotImplementedError("this stream is not writable")
 
-    def writelines(
-        self,
-        data: Iterable[Union[bytes, Union[bytearray, memoryview, Sequence[Any], "mmap", "_CData"]]],
-    ) -> None:
+    def writelines(self, lines: Iterable[AnyStr]) -> None:
         raise NotImplementedError("this stream is not writable")

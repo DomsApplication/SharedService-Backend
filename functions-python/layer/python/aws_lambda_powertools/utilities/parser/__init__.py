@@ -1,6 +1,5 @@
 """Advanced event_parser utility
 """
-
 from . import envelopes
 from .envelopes import BaseEnvelope
 from .parser import event_parser, parse

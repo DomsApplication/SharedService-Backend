@@ -97,8 +97,7 @@ class SingleValueHeadersSerializer(BaseHeadersSerializer):
             if len(cookies) > 1:
                 warnings.warn(
                     "Can't encode more than one cookie in the response. Sending the last cookie only. "
-                    "Did you enable multiValueHeaders on the ALB Target Group?",
-                    stacklevel=2,
+                    "Did you enable multiValueHeaders on the ALB Target Group?"
                 )
 
             # We can only send one cookie, send the last one
@@ -115,8 +114,7 @@ class SingleValueHeadersSerializer(BaseHeadersSerializer):
                 if len(values) > 1:
                     warnings.warn(
                         f"Can't encode more than one header value for the same key ('{key}') in the response. "
-                        "Did you enable multiValueHeaders on the ALB Target Group?",
-                        stacklevel=2,
+                        "Did you enable multiValueHeaders on the ALB Target Group?"
                     )
 
                 # We can only set one header per key, send the last one

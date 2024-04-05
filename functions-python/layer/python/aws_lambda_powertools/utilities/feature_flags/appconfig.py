@@ -66,8 +66,7 @@ class AppConfigStore(StoreProvider):
         try:
             # parse result conf as JSON, keep in cache for self.max_age seconds
             self.logger.debug(
-                "Fetching configuration from the store",
-                extra={"param_name": self.name, "max_age": self.cache_seconds},
+                "Fetching configuration from the store", extra={"param_name": self.name, "max_age": self.cache_seconds}
             )
             return cast(
                 dict,
@@ -104,9 +103,7 @@ class AppConfigStore(StoreProvider):
         if self.envelope:
             self.logger.debug("Envelope enabled; extracting data from config", extra={"envelope": self.envelope})
             config = jmespath_utils.extract_data_from_envelope(
-                data=config,
-                envelope=self.envelope,
-                jmespath_options=self.jmespath_options,
+                data=config, envelope=self.envelope, jmespath_options=self.jmespath_options
             )
 
         return config

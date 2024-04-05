@@ -1,7 +1,3 @@
-from aws_lambda_powertools.utilities.parser.compat import disable_pydantic_v2_warning
-
-disable_pydantic_v2_warning()
-
 from .alb import AlbModel, AlbRequestContext, AlbRequestContextData
 from .apigw import (
     APIGatewayEventAuthorizer,
@@ -17,19 +13,6 @@ from .apigwv2 import (
     RequestContextV2AuthorizerIamCognito,
     RequestContextV2AuthorizerJwt,
     RequestContextV2Http,
-)
-from .bedrock_agent import (
-    BedrockAgentEventModel,
-    BedrockAgentModel,
-    BedrockAgentPropertyModel,
-    BedrockAgentRequestBodyModel,
-    BedrockAgentRequestMediaModel,
-)
-from .cloudformation_custom_resource import (
-    CloudFormationCustomResourceBaseModel,
-    CloudFormationCustomResourceCreateModel,
-    CloudFormationCustomResourceDeleteModel,
-    CloudFormationCustomResourceUpdateModel,
 )
 from .cloudwatch import (
     CloudWatchLogsData,
@@ -59,20 +42,8 @@ from .kinesis_firehose import (
     KinesisFirehoseRecord,
     KinesisFirehoseRecordMetadata,
 )
-from .kinesis_firehose_sqs import KinesisFirehoseSqsModel, KinesisFirehoseSqsRecord
 from .lambda_function_url import LambdaFunctionUrlModel
-from .s3 import (
-    S3EventNotificationEventBridgeDetailModel,
-    S3EventNotificationEventBridgeModel,
-    S3EventNotificationObjectModel,
-    S3Model,
-    S3RecordModel,
-)
-from .s3_batch_operation import S3BatchOperationJobModel, S3BatchOperationModel, S3BatchOperationTaskModel
-from .s3_event_notification import (
-    S3SqsEventNotificationModel,
-    S3SqsEventNotificationRecordModel,
-)
+from .s3 import S3Model, S3RecordModel
 from .s3_object_event import (
     S3ObjectConfiguration,
     S3ObjectContext,
@@ -96,8 +67,6 @@ from .ses import (
 )
 from .sns import SnsModel, SnsNotificationModel, SnsRecordModel
 from .sqs import SqsAttributesModel, SqsModel, SqsMsgAttributeModel, SqsRecordModel
-from .vpc_lattice import VpcLatticeModel
-from .vpc_latticev2 import VpcLatticeV2Model
 
 __all__ = [
     "APIGatewayProxyEventV2Model",
@@ -136,9 +105,6 @@ __all__ = [
     "S3ObjectUserRequest",
     "S3ObjectConfiguration",
     "S3ObjectContext",
-    "S3EventNotificationObjectModel",
-    "S3EventNotificationEventBridgeModel",
-    "S3EventNotificationEventBridgeDetailModel",
     "SesModel",
     "SesRecordModel",
     "SesMessage",
@@ -155,8 +121,6 @@ __all__ = [
     "SqsRecordModel",
     "SqsMsgAttributeModel",
     "SqsAttributesModel",
-    "S3SqsEventNotificationModel",
-    "S3SqsEventNotificationRecordModel",
     "APIGatewayProxyEventModel",
     "APIGatewayEventRequestContext",
     "APIGatewayEventAuthorizer",
@@ -165,20 +129,4 @@ __all__ = [
     "KafkaRecordModel",
     "KafkaMskEventModel",
     "KafkaBaseEventModel",
-    "KinesisFirehoseSqsModel",
-    "KinesisFirehoseSqsRecord",
-    "CloudFormationCustomResourceUpdateModel",
-    "CloudFormationCustomResourceDeleteModel",
-    "CloudFormationCustomResourceCreateModel",
-    "CloudFormationCustomResourceBaseModel",
-    "VpcLatticeModel",
-    "VpcLatticeV2Model",
-    "BedrockAgentModel",
-    "BedrockAgentPropertyModel",
-    "BedrockAgentEventModel",
-    "BedrockAgentRequestBodyModel",
-    "BedrockAgentRequestMediaModel",
-    "S3BatchOperationJobModel",
-    "S3BatchOperationModel",
-    "S3BatchOperationTaskModel",
 ]

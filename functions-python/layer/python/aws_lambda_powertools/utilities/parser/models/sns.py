@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 from typing import Type as TypingType
+from typing import Union
 
 from pydantic import BaseModel, root_validator
 from pydantic.networks import HttpUrl
@@ -14,17 +15,17 @@ class SnsMsgAttributeModel(BaseModel):
 
 
 class SnsNotificationModel(BaseModel):
-    Subject: Optional[str] = None
+    Subject: Optional[str]
     TopicArn: str
     UnsubscribeUrl: HttpUrl
     Type: Literal["Notification"]
-    MessageAttributes: Optional[Dict[str, SnsMsgAttributeModel]] = None
+    MessageAttributes: Optional[Dict[str, SnsMsgAttributeModel]]
     Message: Union[str, TypingType[BaseModel]]
     MessageId: str
-    SigningCertUrl: Optional[HttpUrl] = None  # NOTE: FIFO opt-in removes attribute
-    Signature: Optional[str] = None  # NOTE: FIFO opt-in removes attribute
+    SigningCertUrl: Optional[HttpUrl]  # NOTE: FIFO opt-in removes attribute
+    Signature: Optional[str]  # NOTE: FIFO opt-in removes attribute
     Timestamp: datetime
-    SignatureVersion: Optional[str] = None  # NOTE: FIFO opt-in removes attribute
+    SignatureVersion: Optional[str]  # NOTE: FIFO opt-in removes attribute
 
     @root_validator(pre=True, allow_reuse=True)
     def check_sqs_protocol(cls, values):

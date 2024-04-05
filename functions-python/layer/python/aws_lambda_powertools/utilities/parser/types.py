@@ -1,15 +1,16 @@
 """Generics and other shared types used across parser"""
 
-from typing import Any, Dict, Type, TypeVar, Union
+import sys
+from typing import TypeVar
 
-from pydantic import BaseModel, Json
+from pydantic import BaseModel
 
-from aws_lambda_powertools.shared.types import Literal
+# We only need typing_extensions for python versions <3.8
+if sys.version_info >= (3, 8):
+    from typing import Literal  # noqa: F401
+else:
+    from typing_extensions import Literal  # noqa: F401
 
 Model = TypeVar("Model", bound=BaseModel)
 EnvelopeModel = TypeVar("EnvelopeModel")
 EventParserReturnType = TypeVar("EventParserReturnType")
-AnyInheritedModel = Union[Type[BaseModel], BaseModel]
-RawDictOrModel = Union[Dict[str, Any], AnyInheritedModel]
-
-__all__ = ["Json", "Literal"]

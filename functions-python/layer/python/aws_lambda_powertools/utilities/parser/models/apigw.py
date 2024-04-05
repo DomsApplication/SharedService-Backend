@@ -21,74 +21,72 @@ class ApiGatewayUserCert(BaseModel):
 
 
 class APIGatewayEventIdentity(BaseModel):
-    accessKey: Optional[str] = None
-    accountId: Optional[str] = None
-    apiKey: Optional[str] = None
-    apiKeyId: Optional[str] = None
-    caller: Optional[str] = None
-    cognitoAuthenticationProvider: Optional[str] = None
-    cognitoAuthenticationType: Optional[str] = None
-    cognitoIdentityId: Optional[str] = None
-    cognitoIdentityPoolId: Optional[str] = None
-    principalOrgId: Optional[str] = None
-    # see #1562, temp workaround until API Gateway fixes it the Test button payload
-    # removing it will not be considered a regression in the future
-    sourceIp: Union[IPvAnyNetwork, Literal["test-invoke-source-ip"]]
-    user: Optional[str] = None
-    userAgent: Optional[str] = None
-    userArn: Optional[str] = None
-    clientCert: Optional[ApiGatewayUserCert] = None
+    accessKey: Optional[str]
+    accountId: Optional[str]
+    apiKey: Optional[str]
+    apiKeyId: Optional[str]
+    caller: Optional[str]
+    cognitoAuthenticationProvider: Optional[str]
+    cognitoAuthenticationType: Optional[str]
+    cognitoIdentityId: Optional[str]
+    cognitoIdentityPoolId: Optional[str]
+    principalOrgId: Optional[str]
+    sourceIp: IPvAnyNetwork
+    user: Optional[str]
+    userAgent: Optional[str]
+    userArn: Optional[str]
+    clientCert: Optional[ApiGatewayUserCert]
 
 
 class APIGatewayEventAuthorizer(BaseModel):
-    claims: Optional[Dict[str, Any]] = None
-    scopes: Optional[List[str]] = None
+    claims: Optional[Dict[str, Any]]
+    scopes: Optional[List[str]]
 
 
 class APIGatewayEventRequestContext(BaseModel):
     accountId: str
     apiId: str
-    authorizer: Optional[APIGatewayEventAuthorizer] = None
+    authorizer: Optional[APIGatewayEventAuthorizer]
     stage: str
     protocol: str
     identity: APIGatewayEventIdentity
     requestId: str
     requestTime: str
     requestTimeEpoch: datetime
-    resourceId: Optional[str] = None
+    resourceId: Optional[str]
     resourcePath: str
-    domainName: Optional[str] = None
-    domainPrefix: Optional[str] = None
-    extendedRequestId: Optional[str] = None
+    domainName: Optional[str]
+    domainPrefix: Optional[str]
+    extendedRequestId: Optional[str]
     httpMethod: Literal["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     path: str
-    connectedAt: Optional[datetime] = None
-    connectionId: Optional[str] = None
-    eventType: Optional[Literal["CONNECT", "MESSAGE", "DISCONNECT"]] = None
-    messageDirection: Optional[str] = None
-    messageId: Optional[str] = None
-    routeKey: Optional[str] = None
-    operationName: Optional[str] = None
+    connectedAt: Optional[datetime]
+    connectionId: Optional[str]
+    eventType: Optional[Literal["CONNECT", "MESSAGE", "DISCONNECT"]]
+    messageDirection: Optional[str]
+    messageId: Optional[str]
+    routeKey: Optional[str]
+    operationName: Optional[str]
 
-    @root_validator(allow_reuse=True, skip_on_failure=True)
+    @root_validator(allow_reuse=True)
     def check_message_id(cls, values):
         message_id, event_type = values.get("messageId"), values.get("eventType")
         if message_id is not None and event_type != "MESSAGE":
-            raise ValueError("messageId is available only when the `eventType` is `MESSAGE`")
+            raise TypeError("messageId is available only when the `eventType` is `MESSAGE`")
         return values
 
 
 class APIGatewayProxyEventModel(BaseModel):
-    version: Optional[str] = None
+    version: Optional[str]
     resource: str
     path: str
     httpMethod: Literal["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     headers: Dict[str, str]
     multiValueHeaders: Dict[str, List[str]]
-    queryStringParameters: Optional[Dict[str, str]] = None
-    multiValueQueryStringParameters: Optional[Dict[str, List[str]]] = None
+    queryStringParameters: Optional[Dict[str, str]]
+    multiValueQueryStringParameters: Optional[Dict[str, List[str]]]
     requestContext: APIGatewayEventRequestContext
-    pathParameters: Optional[Dict[str, str]] = None
-    stageVariables: Optional[Dict[str, str]] = None
+    pathParameters: Optional[Dict[str, str]]
+    stageVariables: Optional[Dict[str, str]]
     isBase64Encoded: bool
-    body: Optional[Union[str, Type[BaseModel]]] = None
+    body: Optional[Union[str, Type[BaseModel]]]

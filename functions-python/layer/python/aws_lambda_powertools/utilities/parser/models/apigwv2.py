@@ -14,23 +14,23 @@ class RequestContextV2AuthorizerIamCognito(BaseModel):
 
 
 class RequestContextV2AuthorizerIam(BaseModel):
-    accessKey: Optional[str] = None
-    accountId: Optional[str] = None
-    callerId: Optional[str] = None
-    principalOrgId: Optional[str] = None
-    userArn: Optional[str] = None
-    userId: Optional[str] = None
-    cognitoIdentity: Optional[RequestContextV2AuthorizerIamCognito] = None
+    accessKey: Optional[str]
+    accountId: Optional[str]
+    callerId: Optional[str]
+    principalOrgId: Optional[str]
+    userArn: Optional[str]
+    userId: Optional[str]
+    cognitoIdentity: Optional[RequestContextV2AuthorizerIamCognito]
 
 
 class RequestContextV2AuthorizerJwt(BaseModel):
     claims: Dict[str, Any]
-    scopes: Optional[List[str]] = None
+    scopes: List[str]
 
 
 class RequestContextV2Authorizer(BaseModel):
-    jwt: Optional[RequestContextV2AuthorizerJwt] = None
-    iam: Optional[RequestContextV2AuthorizerIam] = None
+    jwt: Optional[RequestContextV2AuthorizerJwt]
+    iam: Optional[RequestContextV2AuthorizerIam]
     lambda_value: Optional[Dict[str, Any]] = Field(None, alias="lambda")
 
 
@@ -45,7 +45,7 @@ class RequestContextV2Http(BaseModel):
 class RequestContextV2(BaseModel):
     accountId: str
     apiId: str
-    authorizer: Optional[RequestContextV2Authorizer] = None
+    authorizer: Optional[RequestContextV2Authorizer]
     domainName: str
     domainPrefix: str
     requestId: str
@@ -61,11 +61,11 @@ class APIGatewayProxyEventV2Model(BaseModel):
     routeKey: str
     rawPath: str
     rawQueryString: str
-    cookies: Optional[List[str]] = None
+    cookies: Optional[List[str]]
     headers: Dict[str, str]
-    queryStringParameters: Optional[Dict[str, str]] = None
-    pathParameters: Optional[Dict[str, str]] = None
-    stageVariables: Optional[Dict[str, str]] = None
+    queryStringParameters: Optional[Dict[str, str]]
+    pathParameters: Optional[Dict[str, str]]
+    stageVariables: Optional[Dict[str, str]]
     requestContext: RequestContextV2
-    body: Optional[Union[str, Type[BaseModel]]] = None
+    body: Optional[Union[str, Type[BaseModel]]]
     isBase64Encoded: bool

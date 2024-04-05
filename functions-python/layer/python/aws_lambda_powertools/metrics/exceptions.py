@@ -1,4 +1,7 @@
-from aws_lambda_powertools.metrics.provider.cloudwatch_emf.exceptions import MetricResolutionError, MetricUnitError
+class MetricUnitError(Exception):
+    """When metric unit is not supported by CloudWatch"""
+
+    pass
 
 
 class SchemaValidationError(Exception):
@@ -11,6 +14,3 @@ class MetricValueError(Exception):
     """When metric value isn't a valid number"""
 
     pass
-
-
-__all__ = ["MetricUnitError", "MetricResolutionError", "SchemaValidationError", "MetricValueError"]
