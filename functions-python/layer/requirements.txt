@@ -1,2 +1,4 @@
 pyjwt
 jsonschema==4.17.3
+aws-lambda-powertools
+requests
