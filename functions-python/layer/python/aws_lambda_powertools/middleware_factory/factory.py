@@ -107,8 +107,7 @@ def lambda_handler_decorator(decorator: Optional[Callable] = None, trace_executi
         return functools.partial(lambda_handler_decorator, trace_execution=trace_execution)
 
     trace_execution = resolve_truthy_env_var_choice(
-        env=os.getenv(constants.MIDDLEWARE_FACTORY_TRACE_ENV, "false"),
-        choice=trace_execution,
+        env=os.getenv(constants.MIDDLEWARE_FACTORY_TRACE_ENV, "false"), choice=trace_execution
     )
 
     @functools.wraps(decorator)
@@ -120,13 +119,13 @@ def lambda_handler_decorator(decorator: Optional[Callable] = None, trace_executi
         if not inspect.isfunction(func):
             # @custom_middleware(True) vs @custom_middleware(log_event=True)
             raise MiddlewareInvalidArgumentError(
-                f"Only keyword arguments is supported for middlewares: {decorator.__qualname__} received {func}",  # type: ignore # noqa: E501
+                f"Only keyword arguments is supported for middlewares: {decorator.__qualname__} received {func}"  # type: ignore # noqa: E501
             )
 
         @functools.wraps(func)
-        def wrapper(event, context, **handler_kwargs):
+        def wrapper(event, context):
             try:
-                middleware = functools.partial(decorator, func, event, context, **kwargs, **handler_kwargs)
+                middleware = functools.partial(decorator, func, event, context, **kwargs)
                 if trace_execution:
                     tracer = Tracer(auto_patch=False)
                     with tracer.provider.in_subsegment(name=f"## {decorator.__qualname__}"):

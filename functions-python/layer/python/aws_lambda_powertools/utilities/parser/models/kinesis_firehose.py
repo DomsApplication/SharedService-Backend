@@ -10,14 +10,14 @@ class KinesisFirehoseRecordMetadata(BaseModel):
     partitionKey: str
     approximateArrivalTimestamp: PositiveInt
     sequenceNumber: str
-    subsequenceNumber: int
+    subsequenceNumber: str
 
 
 class KinesisFirehoseRecord(BaseModel):
     data: Union[bytes, Type[BaseModel]]  # base64 encoded str is parsed into bytes
     recordId: str
     approximateArrivalTimestamp: PositiveInt
-    kinesisRecordMetadata: Optional[KinesisFirehoseRecordMetadata] = None
+    kinesisRecordMetadata: Optional[KinesisFirehoseRecordMetadata]
 
     @validator("data", pre=True, allow_reuse=True)
     def data_base64_decode(cls, value):
@@ -28,5 +28,5 @@ class KinesisFirehoseModel(BaseModel):
     invocationId: str
     deliveryStreamArn: str
     region: str
-    sourceKinesisStreamArn: Optional[str] = None
+    sourceKinesisStreamArn: Optional[str]
     records: List[KinesisFirehoseRecord]

@@ -20,38 +20,38 @@ class SNSMessage(DictWrapper):
     @property
     def signature_version(self) -> str:
         """Version of the Amazon SNS signature used."""
-        return self["SignatureVersion"]
+        return self["Sns"]["SignatureVersion"]
 
     @property
     def timestamp(self) -> str:
         """The time (GMT) when the subscription confirmation was sent."""
-        return self["Timestamp"]
+        return self["Sns"]["Timestamp"]
 
     @property
     def signature(self) -> str:
         """Base64-encoded "SHA1withRSA" signature of the Message, MessageId, Type, Timestamp, and TopicArn values."""
-        return self["Signature"]
+        return self["Sns"]["Signature"]
 
     @property
     def signing_cert_url(self) -> str:
         """The URL to the certificate that was used to sign the message."""
-        return self["SigningCertUrl"]
+        return self["Sns"]["SigningCertUrl"]
 
     @property
     def message_id(self) -> str:
         """A Universally Unique Identifier, unique for each message published.
 
         For a message that Amazon SNS resends during a retry, the message ID of the original message is used."""
-        return self["MessageId"]
+        return self["Sns"]["MessageId"]
 
     @property
     def message(self) -> str:
         """A string that describes the message."""
-        return self["Message"]
+        return self["Sns"]["Message"]
 
     @property
     def message_attributes(self) -> Dict[str, SNSMessageAttribute]:
-        return {k: SNSMessageAttribute(v) for (k, v) in self["MessageAttributes"].items()}
+        return {k: SNSMessageAttribute(v) for (k, v) in self["Sns"]["MessageAttributes"].items()}
 
     @property
     def get_type(self) -> str:
@@ -59,24 +59,24 @@ class SNSMessage(DictWrapper):
 
         For a subscription confirmation, the type is SubscriptionConfirmation."""
         # Note: this name conflicts with existing python builtins
-        return self["Type"]
+        return self["Sns"]["Type"]
 
     @property
     def unsubscribe_url(self) -> str:
         """A URL that you can use to unsubscribe the endpoint from this topic.
 
         If you visit this URL, Amazon SNS unsubscribes the endpoint and stops sending notifications to this endpoint."""
-        return self["UnsubscribeUrl"]
+        return self["Sns"]["UnsubscribeUrl"]
 
     @property
     def topic_arn(self) -> str:
         """The Amazon Resource Name (ARN) for the topic that this endpoint is subscribed to."""
-        return self["TopicArn"]
+        return self["Sns"]["TopicArn"]
 
     @property
     def subject(self) -> str:
         """The Subject parameter specified when the notification was published to the topic."""
-        return self["Subject"]
+        return self["Sns"]["Subject"]
 
 
 class SNSEventRecord(DictWrapper):
@@ -96,7 +96,7 @@ class SNSEventRecord(DictWrapper):
 
     @property
     def sns(self) -> SNSMessage:
-        return SNSMessage(self._data["Sns"])
+        return SNSMessage(self._data)
 
 
 class SNSEvent(DictWrapper):

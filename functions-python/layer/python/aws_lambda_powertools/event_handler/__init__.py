@@ -2,7 +2,7 @@
 Event handler decorators for common Lambda events
 """
 
-from aws_lambda_powertools.event_handler.api_gateway import (
+from .api_gateway import (
     ALBResolver,
     APIGatewayHttpResolver,
     ApiGatewayResolver,
@@ -10,12 +10,8 @@ from aws_lambda_powertools.event_handler.api_gateway import (
     CORSConfig,
     Response,
 )
-from aws_lambda_powertools.event_handler.appsync import AppSyncResolver
-from aws_lambda_powertools.event_handler.bedrock_agent import BedrockAgentResolver
-from aws_lambda_powertools.event_handler.lambda_function_url import (
-    LambdaFunctionUrlResolver,
-)
-from aws_lambda_powertools.event_handler.vpc_lattice import VPCLatticeResolver, VPCLatticeV2Resolver
+from .appsync import AppSyncResolver
+from .lambda_function_url import LambdaFunctionUrlResolver
 
 __all__ = [
     "AppSyncResolver",
@@ -23,10 +19,7 @@ __all__ = [
     "APIGatewayHttpResolver",
     "ALBResolver",
     "ApiGatewayResolver",
-    "BedrockAgentResolver",
     "CORSConfig",
     "LambdaFunctionUrlResolver",
     "Response",
-    "VPCLatticeResolver",
-    "VPCLatticeV2Resolver",
 ]

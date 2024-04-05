@@ -1,9 +1,7 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel, Field
-
-from aws_lambda_powertools.utilities.parser.types import RawDictOrModel
 
 
 class EventBridgeModel(BaseModel):
@@ -15,5 +13,5 @@ class EventBridgeModel(BaseModel):
     region: str
     resources: List[str]
     detail_type: str = Field(None, alias="detail-type")
-    detail: RawDictOrModel
+    detail: Union[Dict[str, Any], Type[BaseModel]]
     replay_name: Optional[str] = Field(None, alias="replay-name")
