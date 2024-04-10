@@ -1,22 +1,37 @@
 import base64
 import json
 from collections.abc import Mapping
-from typing import Any, Dict, Iterator, Optional
+from functools import cached_property
+from typing import Any, Callable, Dict, Iterator, List, Optional, overload
 
 from aws_lambda_powertools.shared.headers_serializer import BaseHeadersSerializer
+from aws_lambda_powertools.utilities.data_classes.shared_functions import (
+    get_header_value,
+    get_multi_value_query_string_values,
+    get_query_string_value,
+)
 
 
 class DictWrapper(Mapping):
     """Provides a single read only access to a wrapper dict"""
 
-    def __init__(self, data: Dict[str, Any]):
+    def __init__(self, data: Dict[str, Any], json_deserializer: Optional[Callable] = None):
+        """
+        Parameters
+        ----------
+        data : Dict[str, Any]
+            Lambda Event Source Event payload
+        json_deserializer : Callable, optional
+            function to deserialize `str`, `bytes`, `bytearray` containing a JSON document to a Python `obj`,
+            by default json.loads
+        """
         self._data = data
-        self._json_data: Optional[Any] = None
+        self._json_deserializer = json_deserializer or json.loads
 
     def __getitem__(self, key: str) -> Any:
         return self._data[key]
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, DictWrapper):
             return False
 
@@ -28,6 +43,49 @@ class DictWrapper(Mapping):
     def __len__(self) -> int:
         return len(self._data)
 
+    def __str__(self) -> str:
+        return str(self._str_helper())
+
+    def _str_helper(self) -> Dict[str, Any]:
+        """
+        Recursively get a Dictionary of DictWrapper properties primarily
+        for use by __str__ for debugging purposes.
+
+        Will remove "raw_event" properties, and any defined by the Data Class
+        `_sensitive_properties` list field.
+        This should be used in case where secrets, such as access keys, are
+        stored in the Data Class but should not be logged out.
+        """
+        properties = self._properties()
+        sensitive_properties = ["raw_event"]
+        if hasattr(self, "_sensitive_properties"):
+            sensitive_properties.extend(self._sensitive_properties)  # pyright: ignore
+
+        result: Dict[str, Any] = {}
+        for property_key in properties:
+            if property_key in sensitive_properties:
+                result[property_key] = "[SENSITIVE]"
+            else:
+                try:
+                    property_value = getattr(self, property_key)
+                    result[property_key] = property_value
+
+                    # Checks whether the class is a subclass of the parent class to perform a recursive operation.
+                    if issubclass(property_value.__class__, DictWrapper):
+                        result[property_key] = property_value._str_helper()
+                    # Checks if the key is a list and if it is a subclass of the parent class
+                    elif isinstance(property_value, list):
+                        for seq, item in enumerate(property_value):
+                            if issubclass(item.__class__, DictWrapper):
+                                result[property_key][seq] = item._str_helper()
+                except Exception:
+                    result[property_key] = "[Cannot be deserialized]"
+
+        return result
+
+    def _properties(self) -> List[str]:
+        return [p for p in dir(self.__class__) if isinstance(getattr(self.__class__, p), property)]
+
     def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
         return self._data.get(key, default)
 
@@ -37,34 +95,48 @@ class DictWrapper(Mapping):
         return self._data
 
 
-def get_header_value(
-    headers: Dict[str, str], name: str, default_value: Optional[str], case_sensitive: Optional[bool]
-) -> Optional[str]:
-    """Get header value by name"""
-    # If headers is NoneType, return default value
-    if not headers:
-        return default_value
-
-    if case_sensitive:
-        return headers.get(name, default_value)
-    name_lower = name.lower()
-
-    return next(
-        # Iterate over the dict and do a case-insensitive key comparison
-        (value for key, value in headers.items() if key.lower() == name_lower),
-        # Default value is returned if no matches was found
-        default_value,
-    )
-
-
 class BaseProxyEvent(DictWrapper):
     @property
     def headers(self) -> Dict[str, str]:
-        return self["headers"]
+        return self.get("headers") or {}
 
     @property
     def query_string_parameters(self) -> Optional[Dict[str, str]]:
         return self.get("queryStringParameters")
+
+    @property
+    def multi_value_query_string_parameters(self) -> Dict[str, List[str]]:
+        return self.get("multiValueQueryStringParameters") or {}
+
+    @property
+    def resolved_query_string_parameters(self) -> Dict[str, List[str]]:
+        """
+        This property determines the appropriate query string parameter to be used
+        as a trusted source for validating OpenAPI.
+
+        This is necessary because different resolvers use different formats to encode
+        multi query string parameters.
+        """
+        if self.query_string_parameters is not None:
+            query_string = {key: value.split(",") for key, value in self.query_string_parameters.items()}
+            return query_string
+
+        return {}
+
+    @property
+    def resolved_headers_field(self) -> Optional[Dict[str, Any]]:
+        """
+        This property determines the appropriate header to be used
+        as a trusted source for validating OpenAPI.
+
+        This is necessary because different resolvers use different formats to encode
+        headers parameters.
+
+        Headers are case-insensitive according to RFC 7540 (HTTP/2), so we lower the header name
+        This ensures that customers can access headers with any casing, as per the RFC guidelines.
+        Reference: https://www.rfc-editor.org/rfc/rfc7540#section-8.1.2
+        """
+        return self.headers
 
     @property
     def is_base64_encoded(self) -> Optional[bool]:
@@ -75,18 +147,19 @@ class BaseProxyEvent(DictWrapper):
         """Submitted body of the request as a string"""
         return self.get("body")
 
-    @property
+    @cached_property
     def json_body(self) -> Any:
         """Parses the submitted body as json"""
-        if self._json_data is None:
-            self._json_data = json.loads(self.decoded_body)
-        return self._json_data
+        if self.decoded_body:
+            return self._json_deserializer(self.decoded_body)
 
-    @property
-    def decoded_body(self) -> str:
-        """Dynamically base64 decode body as a str"""
-        body: str = self["body"]
-        if self.is_base64_encoded:
+        return None
+
+    @cached_property
+    def decoded_body(self) -> Optional[str]:
+        """Decode the body from base64 if encoded, otherwise return it as is."""
+        body: Optional[str] = self.body
+        if self.is_base64_encoded and body:
             return base64.b64decode(body.encode()).decode()
         return body
 
@@ -113,11 +186,58 @@ class BaseProxyEvent(DictWrapper):
         str, optional
             Query string parameter value
         """
-        params = self.query_string_parameters
-        return default_value if params is None else params.get(name, default_value)
+        return get_query_string_value(
+            query_string_parameters=self.query_string_parameters,
+            name=name,
+            default_value=default_value,
+        )
+
+    def get_multi_value_query_string_values(
+        self,
+        name: str,
+        default_values: Optional[List[str]] = None,
+    ) -> List[str]:
+        """Get multi-value query string parameter values by name
+
+        Parameters
+        ----------
+        name: str
+            Multi-Value query string parameter name
+        default_values: List[str], optional
+            Default values is no values are found by name
+        Returns
+        -------
+        List[str], optional
+            List of query string values
+
+        """
+        return get_multi_value_query_string_values(
+            multi_value_query_string_parameters=self.multi_value_query_string_parameters,
+            name=name,
+            default_values=default_values,
+        )
+
+    @overload
+    def get_header_value(
+        self,
+        name: str,
+        default_value: str,
+        case_sensitive: Optional[bool] = False,
+    ) -> str: ...
+
+    @overload
+    def get_header_value(
+        self,
+        name: str,
+        default_value: Optional[str] = None,
+        case_sensitive: Optional[bool] = False,
+    ) -> Optional[str]: ...
 
     def get_header_value(
-        self, name: str, default_value: Optional[str] = None, case_sensitive: Optional[bool] = False
+        self,
+        name: str,
+        default_value: Optional[str] = None,
+        case_sensitive: Optional[bool] = False,
     ) -> Optional[str]:
         """Get header value by name
 
@@ -128,13 +248,18 @@ class BaseProxyEvent(DictWrapper):
         default_value: str, optional
             Default value if no value was found by name
         case_sensitive: bool
-            Whether to use a case-sensitive look up
+            Whether to use a case-sensitive look up. By default we make a case-insensitive lookup.
         Returns
         -------
         str, optional
             Header value
         """
-        return get_header_value(self.headers, name, default_value, case_sensitive)
+        return get_header_value(
+            headers=self.headers,
+            name=name,
+            default_value=default_value,
+            case_sensitive=case_sensitive,
+        )
 
     def header_serializer(self) -> BaseHeadersSerializer:
         raise NotImplementedError()
