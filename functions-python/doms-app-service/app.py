@@ -29,7 +29,7 @@ def handle_not_found_errors(exc: NotFoundError) -> Response:
     return Response(
         status_code=404, 
         content_type=content_types.APPLICATION_JSON, 
-        body="{ \"message\" : \"Path not found...\"}"
+        body= { "message" : f"Not found route: {app.current_event.path}"}
         )
 
 
