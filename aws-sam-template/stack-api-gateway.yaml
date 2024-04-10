@@ -181,6 +181,51 @@ Resources:
       Principal: "apigateway.amazonaws.com"
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/api/repo/{proxy+}
 
+
+  # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  # <<<<<<< resource {/api/repo/docs/swagger} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  # <<<<<<< resource {/api/repo/docs} >>>>>>>>>>>
+  repoWriteDocsResource:  
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref repoWriteRootResource
+      PathPart: 'docs'
+      RestApiId: !Ref restApiGateway
+  # <<<<<<< resource {/api/repo/docs/swagger} >>>>>>>>>>>
+  repoWriteSwaggerResource:  
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref repoWriteDocsResource
+      PathPart: 'swagger'
+      RestApiId: !Ref restApiGateway
+  # <<<<<<< method {ANY} of {/api/repo/docs/swagger} lambda-proxy-integration >>>>>>>>>>>
+  authMethod:  
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: ANY
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
+          - lambdaArn: !Ref RepositoryFunctionArn
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000  
+      OperationName: 'auth lambda function'
+      ResourceId: !Ref repoWriteSwaggerResource
+      RestApiId: !Ref restApiGateway
+  # <<<<<<< platform lambda API-execution-permissions for rest-api >>>>>>>>>>>
+  authLambdaApiGatewayInvoke:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref RepositoryFunctionArn
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/api/repo/docs/swagger
+
+
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   # <<<<<<< resource {/api/fetch} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
