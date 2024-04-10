@@ -218,7 +218,7 @@ Resources:
       ResourceId: !Ref repoWriteSwaggerResource
       RestApiId: !Ref restApiGateway
   # <<<<<<< platform lambda API-execution-permissions for rest-api >>>>>>>>>>>
-  authLambdaApiGatewayInvoke:
+  swaggerLambdaApiGatewayInvoke:
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: "lambda:InvokeFunction"
