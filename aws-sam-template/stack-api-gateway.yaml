@@ -49,6 +49,7 @@ Resources:
       - authMethod
       - repoWriteMethod
       - repoReadMethod
+      - swaggerMethod
     Properties:
       Description: Deploy the auth rest api
       RestApiId: !Ref restApiGateway
@@ -200,7 +201,7 @@ Resources:
       PathPart: 'swagger'
       RestApiId: !Ref restApiGateway
   # <<<<<<< method {ANY} of {/api/repo/docs/swagger} lambda-proxy-integration >>>>>>>>>>>
-  authMethod:  
+  swaggerMethod:  
     Type: AWS::ApiGateway::Method
     Properties:
       AuthorizationType: NONE
