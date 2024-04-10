@@ -49,6 +49,7 @@ Resources:
       - authMethod
       - repoWriteMethod
       - repoReadMethod
+      - swaggerMethod
     Properties:
       Description: Deploy the auth rest api
       RestApiId: !Ref restApiGateway
@@ -183,24 +184,24 @@ Resources:
 
 
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  # <<<<<<< resource {/api/repo/docs/swagger} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  # <<<<<<< resource {/api/docs/swagger} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  # <<<<<<< resource {/api/repo/docs} >>>>>>>>>>>
+  # <<<<<<< resource {/api/docs} >>>>>>>>>>>
   repoWriteDocsResource:  
     Type: AWS::ApiGateway::Resource
     Properties:
-      ParentId: !Ref repoWriteRootResource
+      ParentId: !Ref repoRootResource
       PathPart: 'docs'
       RestApiId: !Ref restApiGateway
-  # <<<<<<< resource {/api/repo/docs/swagger} >>>>>>>>>>>
+  # <<<<<<< resource {/api/docs/swagger} >>>>>>>>>>>
   repoWriteSwaggerResource:  
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref repoWriteDocsResource
       PathPart: 'swagger'
       RestApiId: !Ref restApiGateway
-  # <<<<<<< method {ANY} of {/api/repo/docs/swagger} lambda-proxy-integration >>>>>>>>>>>
-  authMethod:  
+  # <<<<<<< method {ANY} of {/api/docs/swagger} lambda-proxy-integration >>>>>>>>>>>
+  swaggerMethod:  
     Type: AWS::ApiGateway::Method
     Properties:
       AuthorizationType: NONE
@@ -217,13 +218,13 @@ Resources:
       ResourceId: !Ref repoWriteSwaggerResource
       RestApiId: !Ref restApiGateway
   # <<<<<<< platform lambda API-execution-permissions for rest-api >>>>>>>>>>>
-  authLambdaApiGatewayInvoke:
+  swaggerLambdaApiGatewayInvoke:
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: "lambda:InvokeFunction"
       FunctionName: !Ref RepositoryFunctionArn
       Principal: "apigateway.amazonaws.com"
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/api/repo/docs/swagger
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${restApiGateway}/${ApiGatewayStageName}/ANY/api/docs/swagger
 
 
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
