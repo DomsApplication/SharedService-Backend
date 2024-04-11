@@ -2,9 +2,9 @@ from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler.api_gateway import Router
 from aws_lambda_powertools.event_handler import Response
 
+from utlities import sendResponse
 from repository import getItemByEntityIndexPk, insertItem, updateItem, deleteItem
 from model_user import User
-from app import sendResponse
 import DomsException
 
 tracer = Tracer()

@@ -42,7 +42,7 @@ def validateJsonSchema(schema, json_data):
         else:
             return False, '\n'.join(err_list)
     except jsonschema.exceptions.ValidationError as err:
-        logException(err)        
+        logger.error(err)        
         raise Exception(err)
 
 # Prepare the validation error message as human readable format.

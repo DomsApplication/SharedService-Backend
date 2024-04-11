@@ -5,7 +5,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from aws_lambda_powertools import Logger, Tracer
 from utlities import getDateTimeNow
-from validator import getSearchFieldsByEntityName, getSearchFields
+#from validator import getSearchFieldsByEntityName, getSearchFields
 
 tracer = Tracer()
 logger = Logger()
@@ -40,7 +40,7 @@ def insertItem(entity, pk, version, payload):
         }
 
         # Add the searchable fields into Dynamo table item.
-        searchableField = getSearchFieldsByEntityName(entity, payload)    
+        #searchableField = getSearchFieldsByEntityName(entity, payload)    
         for serField in searchableField:
             for serFieldKey in serField:
                 val = {}
@@ -78,7 +78,7 @@ def updateItem(entity, pk, version, payload):
         }
 
         # Add the searchable fields into Dynamo table item.
-        searchableField = getSearchFieldsByEntityName(entity, payload)    
+        #searchableField = getSearchFieldsByEntityName(entity, payload)    
         for serField in searchableField:
             for serFieldKey in serField:
                 update_expression += f' #{serFieldKey} = :{serFieldKey},'  # Notice the "#" to solve issue with reserved keywords

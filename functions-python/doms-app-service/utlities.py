@@ -1,6 +1,7 @@
 import datetime
 import time
 from datetime import datetime, date
+from aws_lambda_powertools.event_handler import (Response, content_types,)
 
 date_format = "%Y/%m/%d"
 time_format = "%H:%M:%S"
@@ -26,3 +27,10 @@ def getDateFromtimestamp(timestamp):
 
 def getCurrentMilliSec():
     return round(time.time() * 1000)
+
+def sendResponse(code, body):
+    return Response(
+        status_code=code, 
+        content_type=content_types.APPLICATION_JSON, 
+        body= body
+        )

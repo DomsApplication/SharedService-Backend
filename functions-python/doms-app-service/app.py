@@ -5,6 +5,7 @@ from aws_lambda_powertools.event_handler.openapi.exceptions import RequestValida
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
+from utlities import sendResponse
 import controller_user
 import DomsException
 
@@ -29,13 +30,6 @@ def handle_not_found_errors(exc: NotFoundError) -> Response:
 def handle_validation_error(ex: RequestValidationError):
     logger.error("Request failed validation", path=app.current_event.path, errors=ex.errors())
     return sendResponse(422, { "message" : "Invalid data"})
-
-def sendResponse(code, body):
-    return Response(
-        status_code=code, 
-        content_type=content_types.APPLICATION_JSON, 
-        body= body
-        )
 
 @logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
 @tracer.capture_lambda_handler
