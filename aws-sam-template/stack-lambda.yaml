@@ -224,11 +224,11 @@ Outputs:
     Export:
       Name: AuthorizationFunctionName
 
-  adminFunctionArn:
+  AdminFunctionArn:
     Value: !GetAtt adminFunction.Arn
     Export:
-      Name: adminFunctionArn
-  adminFunctionName:
+      Name: AdminFunctionArn
+  AdminFunctionName:
     Value: !Ref adminFunction
     Export:
-      Name: adminFunctionName
+      Name: AdminFunctionName
