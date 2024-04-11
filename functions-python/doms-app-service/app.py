@@ -5,7 +5,7 @@ from aws_lambda_powertools.event_handler.openapi.exceptions import RequestValida
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
-from .controllers import user_controller
+import controller_user
 import DomsException
 
 tracer = Tracer()
@@ -15,7 +15,7 @@ base_endpoint = "/api/repo"
 cors_config = CORSConfig(allow_origin="*", allow_credentials=True, allow_headers=["X-Caller-Id", "X-Signature", "X-Request-Id", "Authorization"], max_age=60000)
 app = APIGatewayRestResolver(enable_validation=True, cors=cors_config)  
 app.enable_swagger(path= "/api/docs/swagger")
-app.include_router(user_controller.router, prefix=base_endpoint)
+app.include_router(controller_user.router, prefix=base_endpoint)
 app.get_openapi_json_schema(title="DOMS application", version="1.0.0", description="Doms application repository service endpoints.")
 
 

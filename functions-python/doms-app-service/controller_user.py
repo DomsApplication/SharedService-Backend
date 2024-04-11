@@ -2,8 +2,8 @@ from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler.api_gateway import Router
 from aws_lambda_powertools.event_handler import Response
 
-from ..repo.repository import getItemByEntityIndexPk, insertItem, updateItem, deleteItem
-from ..models.user import User
+from repository import getItemByEntityIndexPk, insertItem, updateItem, deleteItem
+from model_user import User
 from app import sendResponse
 import DomsException
 
