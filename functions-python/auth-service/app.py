@@ -1,50 +1,38 @@
-import json
-from logger import logInfo, logError
-from apptoken import generateToken
+import requests
 
-def lambda_handler(event, context):
-    try:
-        logInfo('event', event)
-        if 'path' not in event or 'httpMethod' not in event:
-            return sendResponse(400, {'message' : 'Authentication service expecting http request.'})
+from aws_lambda_powertools import Logger, Tracer
+from aws_lambda_powertools.event_handler import ( APIGatewayRestResolver, Response, CORSConfig)
+from aws_lambda_powertools.event_handler.exceptions import ( BadRequestError, InternalServerError, NotFoundError,  ServiceError,  UnauthorizedError)
+from aws_lambda_powertools.event_handler.openapi.exceptions import RequestValidationError
+from aws_lambda_powertools.logging import correlation_paths
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from utlities import sendResponse
+import controller_login
 
-        logInfo('Path', event['path'])
-        logInfo('httpMethod', event['httpMethod'])
-        logInfo('body', event['body'])
-        logInfo('Path_Exists', event['path'] == '/auth/token')
-        logInfo('Http_Exists', event['httpMethod'] == 'POST')
+tracer = Tracer()
+logger = Logger()
 
-        if event['path'] == '/auth/token' and event['httpMethod'] == 'POST':
-            return genToken(event)
-        else:
-            msg = {'message' : 'Requested path :' + event['path'] + ' and httpMethod:' + event['httpMethod'] + ' not allowed.'}
-            return sendResponse(405, msg)    
-        
-    except Exception as error:
-        logError('Exception in main function', error)
-        return sendResponse(500, {'error' : str(error)})
+base_endpoint = "/api/auth"
+cors_config = CORSConfig(allow_origin="*", allow_credentials=True, allow_headers=["X-Caller-Id", "X-Signature", "X-Request-Id", "Authorization"], max_age=60000)
+app = APIGatewayRestResolver(enable_validation=True, cors=cors_config)    
+app.enable_swagger(path= f"{base_endpoint}/swagger")
+app.include_router(controller_login.router, prefix=base_endpoint)
+app.get_openapi_json_schema(title="DOMS application", version="1.0.0", description="Doms application repository service endpoints.")
 
-### Generate JWT token
-def genToken(event):
-    logInfo('GetToken/body', event['body'])
-    if 'body' not in event:
-        return sendResponse(400, {'message' : "Request body was missed. Kindly provide 'username' & 'password' in json format."})
-    
-    requestBody = json.loads(event['body'])
-    logInfo('GetToken/requestBody', requestBody)
 
-    if 'system' != requestBody['username'] or 'Password1#' != requestBody['password']:
-        return sendResponse(401, {'message' : "invalid user credentials"})
+@app.not_found
+@tracer.capture_method
+def handle_not_found_errors(exc: NotFoundError) -> Response:
+    logger.info(f"Not found route: {app.current_event.path}")
+    return sendResponse(404, { "message" : "Path not found..."})
 
-    token = generateToken(requestBody['username'])    
-    return sendResponse(200, {'token' : token})
+@app.exception_handler(RequestValidationError)  
+def handle_validation_error(ex: RequestValidationError):
+    logger.error("Request failed validation", path=app.current_event.path, errors=ex.errors())
+    return sendResponse(422, { "error" : ex.errors()})
 
-# Send response function
-def sendResponse(code, body):
-    return {
-        'statusCode' : code,
-        'body' : json.dumps(body),
-        'headers' : {
-            'Content-Type' : 'application/json'
-        }
-    }
+# You can continue to use other utilities just as before
+@logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST)
+@tracer.capture_lambda_handler
+def lambda_handler(event: dict, context: LambdaContext) -> dict:
+    return app.resolve(event, context)
