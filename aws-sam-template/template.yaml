@@ -101,10 +101,10 @@ Outputs:
     Description: "Authorization Lambda funcation ARN value"
     Value:
       Fn::GetAtt: LambdaStack.Outputs.AuthorizationFunctionArn
-  RepositoryFunctionArn:
-    Description: "Repository Lambda funcation ARN value"
+  AdminFunctionArn:
+    Description: "Admin Lambda funcation ARN value"
     Value:
-      Fn::GetAtt: LambdaStack.Outputs.RepositoryFunctionArn
+      Fn::GetAtt: LambdaStack.Outputs.AdminFunctionArn
 
   DataSourceTableArn:
     Description: "DynamoDB table for serverless microserive architecture for DOMS product (Data Object Modeling)"
