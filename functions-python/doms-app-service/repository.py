@@ -3,9 +3,12 @@ import json
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
-from logger import logInfo, logDebug, logError, logException
+from aws_lambda_powertools import Logger, Tracer
 from utlities import getDateTimeNow
-from validator import getSearchFieldsByEntityName, getSearchFields
+#from validator import getSearchFieldsByEntityName, getSearchFields
+
+tracer = Tracer()
+logger = Logger()
 
 # https://www.fernandomc.com/posts/ten-examples-of-getting-data-from-dynamodb-with-python-and-boto3/
 # https://stackoverflow.com/questions/35758924/how-do-we-query-on-a-secondary-index-of-dynamodb-using-boto3
@@ -37,7 +40,7 @@ def insertItem(entity, pk, version, payload):
         }
 
         # Add the searchable fields into Dynamo table item.
-        searchableField = getSearchFieldsByEntityName(entity, payload)    
+        #searchableField = getSearchFieldsByEntityName(entity, payload)    
         for serField in searchableField:
             for serFieldKey in serField:
                 val = {}
@@ -52,7 +55,7 @@ def insertItem(entity, pk, version, payload):
         return response['ResponseMetadata']['HTTPStatusCode']
     except ClientError as err:
         exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {pk}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
-        logException(exception_value)
+        logger.error(exception_value)
         raise ValueError(exception_value)
 
 def updateItem(entity, pk, version, payload):
@@ -75,7 +78,7 @@ def updateItem(entity, pk, version, payload):
         }
 
         # Add the searchable fields into Dynamo table item.
-        searchableField = getSearchFieldsByEntityName(entity, payload)    
+        #searchableField = getSearchFieldsByEntityName(entity, payload)    
         for serField in searchableField:
             for serFieldKey in serField:
                 update_expression += f' #{serFieldKey} = :{serFieldKey},'  # Notice the "#" to solve issue with reserved keywords
@@ -99,7 +102,7 @@ def updateItem(entity, pk, version, payload):
         return response['ResponseMetadata']['HTTPStatusCode']
     except ClientError as err:
         exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {pk}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
-        logException(exception_value)
+        logger.error(exception_value)
         raise ValueError(exception_value)
 
 
@@ -121,7 +124,7 @@ def deleteItem(entity, pk):
         return response['ResponseMetadata']['HTTPStatusCode']
     except ClientError as err:
         exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {pk}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
-        logException(exception_value)
+        logger.error(exception_value)
         raise ValueError(exception_value)
 
 def getItemByEntityIndexPk(entity, pk):
@@ -150,13 +153,13 @@ def getItemByEntityIndexPk(entity, pk):
             return None
         elif 'Items' in response and len(response['Items']) > 1:
             exception_value = f"Duplciated item found in {DDB_TABLE_NAME} for pk: {pk} by index: 'ENTITIES-IDX'"
-            logException(exception_value)
+            logger.error(exception_value)
             raise ValueError(exception_value)
         else:
             return response['Items'][0]['PAYLOAD']['S']
     except ClientError as err:
         exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {pk} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
-        logException(exception_value)
+        logger.error(exception_value)
         raise ValueError(exception_value)
 
 def dynamoDBDataType(dataType):
