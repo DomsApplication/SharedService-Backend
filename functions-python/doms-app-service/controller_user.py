@@ -1,8 +1,7 @@
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler.api_gateway import Router
-from aws_lambda_powertools.event_handler import Response
+from aws_lambda_powertools.event_handler import (Response, content_types,)
 
-from utlities import sendResponse
 from repository import getItemByEntityIndexPk, insertItem, updateItem, deleteItem
 from model_user import User
 import DomsException
@@ -39,6 +38,12 @@ def get_list_of_users() -> Response:
         logger.error(f"User GetList Exception: {error}")
         return sendResponse(500, {'error' : str(error)})
 
+def sendResponse(code, body):
+    return Response(
+        status_code=code, 
+        content_type=content_types.APPLICATION_JSON, 
+        body= body
+        )
 
 
 
