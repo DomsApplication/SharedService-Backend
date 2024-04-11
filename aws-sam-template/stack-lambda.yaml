@@ -24,7 +24,7 @@ Globals:
     Architectures:
       - x86_64
     MemorySize: 128
-    Timeout: 10
+    Timeout: 25
     Environment:
       Variables:
         POWERTOOLS_LOG_LEVEL: INFO
@@ -43,7 +43,7 @@ Resources:
   authenticationFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: ../functions-python/doms-authentication
+      CodeUri: ../functions-python/auth-service
       Handler: app.lambda_handler
       Runtime: python3.12
       Layers:
@@ -54,33 +54,25 @@ Resources:
   authorizationFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: ../functions-python/doms-authorization
+      CodeUri: ../functions-python/authorize-service
       Handler: app.lambda_handler
       Runtime: python3.12
       Layers:
         - !Ref pythonLibs
       Role: !GetAtt AuthorizationLambdaExecutionRole.Arn
 
-  # <<<<<<< {{LAMBDA FUNCTION}} repository >>>>>>>>>>>
-  repositoryFunction:
+  # <<<<<<< {{LAMBDA FUNCTION}} admin >>>>>>>>>>>
+  adminFunction:
     Type: AWS::Serverless::Function 
     Properties:
-      CodeUri: ../functions-python/doms-app-service
+      CodeUri: ../functions-python/admin-service
       Handler: app.lambda_handler
       Runtime: python3.12
       Layers:
         - !Ref pythonLibs
-      Role: !GetAtt repositoryLambdaExecutionRole.Arn
+      Role: !GetAtt adminLambdaExecutionRole.Arn
 
-  # <<<<<<< {{LAMBDA FUNCTION}} queries >>>>>>>>>>>
-  queriesFunction:
-    Type: AWS::Serverless::Function 
-    Properties:
-      CodeUri: ../functions-python/doms-queries
-      Handler: app.lambda_handler
-      Runtime: python3.12
-      Role: !GetAtt queriesLambdaExecutionRole.Arn
-
+  # <<<<<<< {{LAMBDA LAYER}} python libraries >>>>>>>>>>>
   pythonLibs:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -117,19 +109,7 @@ Resources:
             Action: "sts:AssumeRole"
 
   # <<<<<<<  {{ROLE}} repository lambda execution role >>>>>>>>>>>    
-  repositoryLambdaExecutionRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: "sts:AssumeRole"
-
-  # <<<<<<<  {{ROLE}} queries lambda execution role >>>>>>>>>>>    
-  queriesLambdaExecutionRole:
+  adminLambdaExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -150,8 +130,7 @@ Resources:
       Roles:
         - !Ref AuthenticationLambdaExecutionRole
         - !Ref AuthorizationLambdaExecutionRole
-        - !Ref repositoryLambdaExecutionRole
-        - !Ref queriesLambdaExecutionRole                
+        - !Ref adminLambdaExecutionRole
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -175,8 +154,7 @@ Resources:
     Properties:
       PolicyName: LambdaDynamoDBAccess
       Roles:
-        - !Ref repositoryLambdaExecutionRole
-        - !Ref queriesLambdaExecutionRole
+        - !Ref adminLambdaExecutionRole
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -201,7 +179,7 @@ Resources:
     Properties:
       PolicyName: LambdaS3BucketAccess
       Roles:
-        - !Ref repositoryLambdaExecutionRole
+        - !Ref adminLambdaExecutionRole
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -246,20 +224,11 @@ Outputs:
     Export:
       Name: AuthorizationFunctionName
 
-  RepositoryFunctionArn:
-    Value: !GetAtt repositoryFunction.Arn
+  AdminFunctionArn:
+    Value: !GetAtt adminFunction.Arn
     Export:
-      Name: RepositoryFunctionArn
-  RepositoryFunctionName:
-    Value: !Ref repositoryFunction
+      Name: AdminFunctionArn
+  AdminFunctionName:
+    Value: !Ref adminFunction
     Export:
-      Name: RepositoryFunctionName
-
-  QueriesFunctionArn:
-    Value: !GetAtt queriesFunction.Arn
-    Export:
-      Name: QueriesFunctionArn
-  QueriesFunctionName:
-    Value: !Ref queriesFunction
-    Export:
-      Name: QueriesFunctionName
+      Name: AdminFunctionName

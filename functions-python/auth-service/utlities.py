@@ -1,7 +1,11 @@
 import datetime
 import time
 from datetime import datetime, date
-from logger import logInfo, logDebug, logError, logException
+from aws_lambda_powertools.event_handler import ( Response, content_types, )
+from aws_lambda_powertools import Logger, Tracer
+
+tracer = Tracer()
+logger = Logger()
 
 date_format = "%Y/%m/%d"
 time_format = "%H:%M:%S"
@@ -27,3 +31,12 @@ def getDateFromtimestamp(timestamp):
 
 def getCurrentMilliSec():
     return round(time.time() * 1000)
+
+@tracer.capture_method
+def sendResponse(code, body):
+    return Response(
+        status_code=code, 
+        content_type=content_types.APPLICATION_JSON, 
+        body= body
+        )
+
