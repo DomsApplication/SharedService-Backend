@@ -1,7 +1,6 @@
 import datetime
 import time
 from datetime import datetime, date
-from logger import logInfo, logDebug, logError, logException
 
 date_format = "%Y/%m/%d"
 time_format = "%H:%M:%S"
