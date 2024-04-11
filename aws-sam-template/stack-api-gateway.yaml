@@ -44,9 +44,8 @@ Resources:
     Type: AWS::ApiGateway::Deployment
     DependsOn: 
       - authMethod
-      - repoWriteMethod
-      - repoReadMethod
-      - swaggerMethod
+      - adminMethod
+      - adminSwaggerMethod
     Properties:
       Description: Deploy the auth rest api
       RestApiId: !Ref restApiGateway
