@@ -1,7 +1,10 @@
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler.api_gateway import Router
+from pydantic import ValidationError
 
+from repository import getItemByEntityIndexPk, insertItem
 from models.user import User
+from models.RepoObject import RepoObject
 from utlities import sendResponse
 import DomsException
 
@@ -14,7 +17,18 @@ router = Router()
 def create_user(user: User):
     try:
         logger.info(f"USER details: {user}")
-        return sendResponse(200, user)
+
+        if getItemByEntityIndexPk(user.entity, user.unique_id) is not None: 
+            message = f"Item '{user.unique_id}' is already exists for the entity {user.entity}."
+            return sendResponse(406, {'message' : message})
+
+        repoObject = RepoObject(unique_id=user.unique_id, entity=user.entity, version=user.version, payload=user)
+        insertItem(repoObject)
+        message = f"Item '{user.unique_id}' is created successfully for the entity {user.entity}."                    
+        return sendResponse(201, {'message' : message})
+    except ValidationError as e:
+        logger.error(f"User creation ValidationError: {e}")
+        return sendResponse(400, {'error' : str(e)})
     except DomsException as err:
         logger.error(f"User GetList DomsException: {err}", extra="extra info we can add here")
         return sendResponse(err.error_code, {'error' : str(err.message)})

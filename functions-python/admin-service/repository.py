@@ -5,7 +5,8 @@ from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from aws_lambda_powertools import Logger, Tracer
 from utlities import getDateTimeNow
-#from validator import getSearchFieldsByEntityName, getSearchFields
+from models.RepoObject import RepoObject
+from validator import getSearchFieldsByEntityName, getSearchFields
 
 tracer = Tracer()
 logger = Logger()
@@ -23,29 +24,21 @@ dynamodb_client = boto3.client('dynamodb', region_name = AWS_REGION_NAME)
 dynamodb = boto3.resource('dynamodb', region_name = AWS_REGION_NAME)
 table = dynamodb.Table(DDB_TABLE_NAME)
 
-def insertItem(entity, pk, version, payload):
+def insertItem(repo: RepoObject):
     try:
         item = {
-            "PK" : { 'S' : pk },
-            "SK" : { 'S' : pk },
-            "ENTITIES" : { 'S' :  entity },
-            "MAPPINGS" : { 'S' :  entity },
-            "VERSION" : { 'N' :  str(version) },
+            "PK" : { 'S' : repo.unique_id },
+            "SK" : { 'S' : repo.unique_id },
+            "ENTITIES" : { 'S' :  repo.entity },
+            "MAPPINGS" : { 'S' :  repo.entity },
+            "VERSION" : { 'N' :  str(repo.version) },
             "IS_DELETED" : { 'BOOL' :  False },
-            "PAYLOAD" : { 'S' :  json.dumps(payload) },
+            "PAYLOAD" : { 'S' :  json.dumps(repo.payload) },
             "CREATED_BY" : { 'S' :  "task_user" },
             "CREATED_ON" : { 'S' :  str(getDateTimeNow()) },
             "MODIFIED_BY" : { 'S' :  "task_user" },
             "MODIFIED_ON" : { 'S' :  str(getDateTimeNow()) },
         }
-
-        # Add the searchable fields into Dynamo table item.
-        #searchableField = getSearchFieldsByEntityName(entity, payload)    
-        for serField in searchableField:
-            for serFieldKey in serField:
-                val = {}
-                val[dynamoDBDataType(serField['type'])] = serField[serFieldKey]
-                item[f'{serFieldKey}'] = val
 
         # Persist the record
         response = dynamodb_client.put_item(
@@ -54,7 +47,7 @@ def insertItem(entity, pk, version, payload):
         )
         return response['ResponseMetadata']['HTTPStatusCode']
     except ClientError as err:
-        exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {pk}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {repo.unique_id}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logger.error(exception_value)
         raise ValueError(exception_value)
 
@@ -78,7 +71,7 @@ def updateItem(entity, pk, version, payload):
         }
 
         # Add the searchable fields into Dynamo table item.
-        #searchableField = getSearchFieldsByEntityName(entity, payload)    
+        searchableField = getSearchFieldsByEntityName(entity, payload)    
         for serField in searchableField:
             for serFieldKey in serField:
                 update_expression += f' #{serFieldKey} = :{serFieldKey},'  # Notice the "#" to solve issue with reserved keywords
