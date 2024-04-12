@@ -2,7 +2,6 @@ from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler.api_gateway import Router
 from pydantic import ValidationError
 
-from repository import insertItem
 from models.user import User
 from models.RepoObject import RepoObject
 from utlities import sendResponse
@@ -17,9 +16,9 @@ router = Router()
 def create_user(user: User):
     try:
         logger.info(f"USER details: {user}")
-
         repoObject = RepoObject(unique_id=user.unique_id, entity=user.entity, version=user.version, payload=user, searchableField=user)
-        insertItem(repoObject)
+        logger.info(f"REPO details: {repoObject}")
+
         message = f"Item '{user.unique_id}' is created successfully for the entity {user.entity}."                    
         return sendResponse(201, {'message' : message})
     except ValidationError as e:
