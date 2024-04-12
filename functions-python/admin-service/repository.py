@@ -5,6 +5,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from aws_lambda_powertools import Logger, Tracer
 from utlities import getDateTimeNow
+from models.RepoObject import RepoObject
 
 tracer = Tracer()
 logger = Logger()
@@ -57,3 +58,31 @@ def getItemByEntityIndexPk(entity, pk):
         exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {pk} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logger.error(exception_value)
         raise ValueError(exception_value)
+
+def insertItem(repo: RepoObject):
+    try:
+        item = {
+            "PK" : { 'S' : repo.unique_id },
+            "SK" : { 'S' : repo.unique_id },
+            "ENTITIES" : { 'S' :  repo.entity },
+            "MAPPINGS" : { 'S' :  repo.entity },
+            "VERSION" : { 'N' :  str(repo.version) },
+            "IS_DELETED" : { 'BOOL' :  False },
+            "PAYLOAD" : { 'S' :  json.dumps(repo.payload) },
+            "CREATED_BY" : { 'S' :  "task_user" },
+            "CREATED_ON" : { 'S' :  str(getDateTimeNow()) },
+            "MODIFIED_BY" : { 'S' :  "task_user" },
+            "MODIFIED_ON" : { 'S' :  str(getDateTimeNow()) },
+        }
+
+        # Persist the record
+        response = dynamodb_client.put_item(
+            TableName = DDB_TABLE_NAME,
+            Item = item
+        )
+        return response['ResponseMetadata']['HTTPStatusCode']
+    except ClientError as err:
+        exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {repo.unique_id}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        logger.error(exception_value)
+        raise ValueError(exception_value)
+
