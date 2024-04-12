@@ -22,7 +22,7 @@ def create_user(user: User):
             message = f"Item '{user.unique_id}' is already exists for the entity {user.entity}."
             return sendResponse(406, {'message' : message})
 
-        repoObject = RepoObject(unique_id=user.unique_id, entity=user.entity, version=user.version, payload=user)
+        repoObject = RepoObject(unique_id=user.unique_id, entity=user.entity, version=user.version, payload=user, searchableField=user)
         insertItem(repoObject)
         message = f"Item '{user.unique_id}' is created successfully for the entity {user.entity}."                    
         return sendResponse(201, {'message' : message})
