@@ -12,6 +12,7 @@ logger = Logger()
 # https://python-jsonschema.readthedocs.io/en/stable/validate/
 
 # Get a JsonSchema from the dynamodb using entity name.
+@tracer.capture_method
 def get_schema(entityName):
     schema = getItemByEntityIndexPk('SCHEMA', entityName)
     logger.info("get_schema/schema", schema)
@@ -20,6 +21,7 @@ def get_schema(entityName):
     return json.loads(schema)
 
 # validate the json data from the entity name
+@tracer.capture_method
 def validateJsonEntityName(entityName, json_data):
     try:
         schema = get_schema(entityName)
@@ -29,6 +31,7 @@ def validateJsonEntityName(entityName, json_data):
         raise Exception(err)
 
 # validate the json data from the schema
+@tracer.capture_method
 def validateJsonSchema(schema, json_data):
     try:
         logger.info("validateJson/json_data", json_data)
@@ -46,16 +49,19 @@ def validateJsonSchema(schema, json_data):
         raise Exception(err)
 
 # Prepare the validation error message as human readable format.
+@tracer.capture_method
 def errorMessage(path, message):
     path = path.replace("deque(", "")
     path = path.replace(")", "")
     return ' : '.join([path, message])
 
 # Get a list of fields which is True of searchable.
+@tracer.capture_method
 def getSearchFieldsByEntityName(entityName, payload):
     return getSearchFields(get_schema(entityName), payload)
 
 # Get a list of fields which is True of searchable.
+@tracer.capture_method
 def getSearchFields(_entitySchema, payload):
     searchableList = []
     # Loop along dictionary keys
@@ -73,6 +79,7 @@ def getSearchFields(_entitySchema, payload):
 
 # List the field which is required in the schema
 #https://stackoverflow.com/questions/31750725/get-required-fields-from-json-schema
+@tracer.capture_method
 def required_dict(schema):
     return {
         key: key in schema['required']
