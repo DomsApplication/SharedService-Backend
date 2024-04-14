@@ -32,7 +32,7 @@ def insertItem(repo: RepoObject):
             "MAPPINGS" : { 'S' :  repo.entity },
             "VERSION" : { 'N' :  str(repo.version) },
             "IS_DELETED" : { 'BOOL' :  False },
-            "PAYLOAD" : { 'S' :  repo.payload },
+            "PAYLOAD" : { 'S' :  json.dumps(repo.payload) },
             "CREATED_BY" : { 'S' :  "task_user" },
             "CREATED_ON" : { 'S' :  str(getDateTimeNow()) },
             "MODIFIED_BY" : { 'S' :  "task_user" },
@@ -71,7 +71,7 @@ def updateItem(repo: RepoObject):
                 '#modifiedon':'MODIFIED_ON'
         }
         expression_attribute_values = {
-                ':payload': {'S' : repo.payload},
+                ':payload': {'S' : json.dumps(repo.payload)},
                 ':version': {'S' : str(repo.version)},
                 ':modifiedby': {'S' : 'task_user'},
                 ':modifiedon': {'S' : str(getDateTimeNow())},

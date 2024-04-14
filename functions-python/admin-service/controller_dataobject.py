@@ -18,22 +18,23 @@ data_object_name = 'DATA_OBJECT'
 def create_data_object():
     try:
         bodyObject: dict = router.current_event.json_body  # deserialize json str to dict
+        logger.info(f"OBJECT DICT details: {bodyObject}")
         validateDataObject(bodyObject)
 
         repoObject = RepoObject(
-            unique_id=bodyObject.entity, 
+            unique_id=bodyObject["entity"], 
             entity=data_object_name, 
-            version=bodyObject.version, 
+            version=bodyObject["version"], 
             payload=json.dumps(bodyObject),
             searchableField=None)
         logger.info(f"REPO details: {repoObject}")
 
         schema = getItemByEntityIndexPk(repoObject)
         if schema is not None:
-            raise DomsException(400, f"{data_object_name} with the name '{bodyObject.entity}' is already exists.")
-
+            raise DomsException(400, f"{data_object_name} with the name {bodyObject['entity']} is already exists.")
+        logger.info(f"REPO PAYLOAD details: {repoObject.payload}")
         insertItem(repoObject)
-        message = f"Item '{bodyObject.entity}' is created successfully for the {data_object_name}."                    
+        message = f"Item '{bodyObject['entity']}' is created successfully for the {data_object_name}."                    
         return sendResponse(201, {'message' : message})
     except DomsException as err:
         logger.error(f'DomsException in create_data_object: {str(err.message)}')

@@ -11,4 +11,4 @@ class RepoObject(BaseModel):
     entity: str = Field(min_length=3, max_length=20)
     version: Optional[int] = Field(gt=0, lt=10, default=1)
     payload: Json
-    searchableField: Array
+    searchableField: list[Json] = None

@@ -40,7 +40,7 @@ def validateDataObject(_object: dict):
     if _object is None:
         message = f"Data-Object body is required."
         raise DomsException(400, message)
-    elif _object.entity is None or _object.title is None or _object.version is None or _object.type is None:
+    elif _object["entity"] is None or _object["title"] is None or _object["version"] is None or _object["type"] is None:
         message = f"Required field(s) is missed. Please contact Administrator."
         raise DomsException(400, message)
     else:
