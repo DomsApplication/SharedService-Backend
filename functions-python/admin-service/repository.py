@@ -85,4 +85,4 @@ def insertItem(repo: RepoObject):
         exception_value = f"Exception in put item of {DDB_TABLE_NAME} for index: 'ENTITIES-IDX' for {repo.unique_id}, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logger.error(exception_value)
         raise ValueError(exception_value)
-
+        
