@@ -34,7 +34,7 @@ def create_data_object():
             raise DomsException(400, f"{data_object_name} with the name {bodyObject['entity']} is already exists.")
         logger.info(f"REPO PAYLOAD details: {repoObject.payload}")
         insertItem(repoObject)
-        message = f"Item '{bodyObject['entity']}' is created successfully for the {data_object_name}."                    
+        message = f"Item '{bodyObject['entity']}' is created successfully for the {data_object_name}."
         return sendResponse(201, {'message' : message})
     except DomsException as err:
         logger.error(f'DomsException in create_data_object: {str(err.message)}')
@@ -81,7 +81,8 @@ def delete_data_object(object_id: str):
             raise DomsException(400, f"'{data_object_name} with the name '{object_id}' is not exists to delete.")
 
         deleteItem(repoObject)
-        return sendResponse(200, schema)
+        message = f"Item '{object_id}' is created successfully for the {data_object_name}."
+        return sendResponse(204, message)
     except DomsException as err:
         logger.error(f'DomsException in delete_data_object: {str(err.message)}')
         return sendResponse(err.error_code, {'error' : str(err.message)})
