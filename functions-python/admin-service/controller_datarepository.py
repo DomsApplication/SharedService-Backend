@@ -26,10 +26,7 @@ def create_data_repository():
         if not is_valid:
             raise DomsException(400, {'error' : message})
 
-        dbItem = getItemByEntityIndexPk(entityName, uniquevalue)
-        logger.info("app/dbItem", dbItem)
-
-        if dbItem is not None: 
+        if getItem(entityName, uniquevalue) is not None: 
             message = f"Item '{uniquevalue}' is already exists for the entity {entityName}."
             raise DomsException(406, {'message' : message})
 
@@ -56,6 +53,7 @@ def create_data_repository():
 ###################################################
 # Common functions
 ###################################################
+@tracer.capture_method
 def validateDataRepository(_body: dict):
     if _body is None:
         message = f"Request body is required."
@@ -79,3 +77,22 @@ def validateDataRepository(_body: dict):
         except Exception as err:
             logger.error(err)        
             raise Exception(err)
+
+@tracer.capture_method
+def getItem(entityName, uniquevalue):
+    try:
+        repoObject = RepoObject(
+            unique_id = uniquevalue, 
+            entity = entityName, 
+            version = None, 
+            payload = None,
+            searchableField = None)
+        logger.info(f"REPO details: {repoObject}")
+        dataItem = getItemByEntityIndexPk(repoObject) 
+        logger.info("app/dataItem", dataItem)
+        return dataItem
+    except Exception as err:
+        logger.error(err)        
+        raise Exception(err)
+    
+
