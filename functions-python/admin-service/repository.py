@@ -168,7 +168,13 @@ def getItemByEntityIndexPk(repo: RepoObject):
 # Get a JsonSchema from the dynamodb using entity name.
 @tracer.capture_method
 def get_schema(entityName):
-    schema = getItemByEntityIndexPk(constants.data_object_name, entityName)
+    repoObject = RepoObject(
+        unique_id = entityName, 
+        entity = constants.data_object_name, 
+        version = None, 
+        payload = None,
+        searchableField = None)
+    schema = getItemByEntityIndexPk(repoObject)
     logger.info("get_schema/schema", schema)
     if schema is None:
         raise ValueError(400, f"'Schema with the name '{entityName}' not exists.")
