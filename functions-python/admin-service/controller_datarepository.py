@@ -19,10 +19,9 @@ def create_data_repository():
     try:
         body = router.current_event.json_body  # deserialize json str to dict
         entityName, uniquekey, uniquevalue, version, schema = validateDataRepository(body)
-
-        is_valid, message = validateRequestBodyWithDataObject(schema, json.dumps(body))
-        if is_valid:
-            raise DomsException(400, {'error' : message})
+        is_valid, message = validateRequestBodyWithDataObject(schema, body)
+        if not is_valid:
+            raise DomsException(400, {'error' : str(message)})
         if getItem(entityName, uniquevalue) is not None: 
             message = f"Item '{uniquevalue}' is already exists for the entity {entityName}."
             raise DomsException(406, {'message' : message})
@@ -31,11 +30,45 @@ def create_data_repository():
             entity = entityName, 
             version = version, 
             payload = json.dumps(body),
-            searchableField = getSearchFields(schema, json.loads(body)))
-
+            searchableField = getSearchFields(schema, body))
+        logger.info(f'REPO OBJECT::: {repoObject}')
         insertItem(repoObject)
         message = f"Item '{uniquevalue}' is created successfully for the {entityName}."
         return sendResponse(201, {'message' : message})
+    except DomsException as err:
+        logger.error(f'DomsException in create_data_object: {str(err.message)}')
+        return sendResponse(err.error_code, {'error' : str(err.message)})
+    except Exception as error:
+        logger.error(f"Exception in create_data_object: {error}")
+        return sendResponse(500, {'error' : str(error)})
+
+# Endpoint ------------------
+@router.put("/repository")
+@tracer.capture_method
+def create_data_repository():
+    try:
+        body = router.current_event.json_body  # deserialize json str to dict
+        entityName, uniquekey, uniquevalue, version, schema = validateDataRepository(body)
+        is_valid, message = validateRequestBodyWithDataObject(schema, body)
+        if not is_valid:
+            raise DomsException(400, {'error' : str(message)})
+        dbItem = getItem(entityName, uniquevalue) 
+        if dbItem is None: 
+            message = f"Item '{uniquevalue}' is not exists for the entity {entityName}."
+            raise DomsException(406, {'message' : message})
+
+        ddbPayloadObject = json.loads(dbItem)
+        ddbPayloadObject.update(body) #updating the attributes(key,values) present in payload                
+        repoObject = RepoObject(
+            unique_id = uniquevalue, 
+            entity = entityName, 
+            version = version, 
+            payload = json.dumps(ddbPayloadObject),
+            searchableField = getSearchFields(schema, ddbPayloadObject))
+        logger.info(f'REPO OBJECT::: {repoObject}')
+        updateItem(repoObject)
+        message = f"Item '{uniquevalue}' is updated successfully for the {entityName}."
+        return sendResponse(200, {'message' : message})
     except DomsException as err:
         logger.error(f'DomsException in create_data_object: {str(err.message)}')
         return sendResponse(err.error_code, {'error' : str(err.message)})
@@ -67,7 +100,6 @@ def validateDataRepository(_body):
             if uniquevalue is None:
                 raise DomsException(400, {'error' : f"'uniqueId' field value is missed in request body."})
             version = schema['version']
-
             return entityName, uniquekey, uniquevalue, version, schema            
         except Exception as err:
             logger.error(err)        

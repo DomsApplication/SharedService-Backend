@@ -41,12 +41,17 @@ def insertItem(repo: RepoObject):
         }
 
         # Add the searchable fields into Dynamo table item.
-        if repo.searchableField is not None:   
+        if repo.searchableField is not None:
             for serField in repo.searchableField:
                 for serFieldKey in serField:
-                    val = {}
-                    val[dynamoDBDataType(serField['type'])] = serField[serFieldKey]
-                    item[f'{serFieldKey}'] = val
+                    if 'type' in serFieldKey:
+                        _dtype = dynamoDBDataType(serField['type'])
+                    else:
+                        _skey = serFieldKey
+                        _sval = serField[serFieldKey]
+                val = {}
+                val[_dtype] = _sval
+                item[f'{_skey}'] = val
 
         # Persist the record
         response = dynamodb_client.put_item(
@@ -83,11 +88,17 @@ def updateItem(repo: RepoObject):
         if repo.searchableField is not None:  
             for serField in repo.searchableField:
                 for serFieldKey in serField:
-                    update_expression += f' #{serFieldKey} = :{serFieldKey},'  # Notice the "#" to solve issue with reserved keywords
-                    expression_attribute_names[f'#{serFieldKey}'] = serFieldKey
-                    val = {}
-                    val[dynamoDBDataType(serField['type'])] = serField[serFieldKey]
-                    expression_attribute_values[f':{serFieldKey}'] = val
+                    if 'type' in serFieldKey:
+                        _dtype = dynamoDBDataType(serField['type'])
+                    else:
+                        _skey = serFieldKey
+                        _sval = serField[serFieldKey]
+
+                update_expression += f' #{_skey} = :{_skey},'  # Notice the "#" to solve issue with reserved keywords
+                expression_attribute_names[f'#{_skey}'] = _skey
+                val = {}
+                val[_dtype] = _sval
+                expression_attribute_values[f':{_skey}'] = val
 
         response = dynamodb_client.update_item(
             TableName=DDB_TABLE_NAME,

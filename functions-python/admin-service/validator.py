@@ -24,8 +24,6 @@ def getUniqueIdFromSchema(entitySchema):
 @tracer.capture_method
 def validateRequestBodyWithDataObject(schema, data):
     try:
-        logger.info("validateJson/json_data", data)
-        logger.info("validateJson/schema", schema)
         errors = jsonschema.Draft202012Validator(schema).iter_errors(data)
         err_list = []
         for error in errors:
@@ -35,7 +33,7 @@ def validateRequestBodyWithDataObject(schema, data):
         else:
             return False, '\n'.join(err_list)
     except jsonschema.exceptions.ValidationError as err:
-        logger.error(err)        
+        logger.error(f'VALIDATION ERROR:{err}')        
         raise Exception(err)
 
 # Prepare the validation error message as human readable format.
@@ -48,11 +46,13 @@ def errorMessage(path, message):
 # Get a list of fields which is True of searchable.
 @tracer.capture_method
 def getSearchFields(_entitySchema, payload):
+    logger.info(f'SEARCH schema#::: {_entitySchema}')
+    logger.info(f'SEARCH payload#::: {payload}')
     searchableList = []
     # Loop along dictionary keys
     for field_key in _entitySchema['properties']:
         field = _entitySchema['properties'][field_key]
-        if  field['searchable'] is not None and field['searchable'] is True:
+        if 'searchable' in field and field['searchable'] is True:
             ply_key = field_key
             ply_type = field['type']
             ply_value = payload[field_key]
@@ -60,7 +60,8 @@ def getSearchFields(_entitySchema, payload):
             item[ply_key] = ply_value
             item['type'] = ply_type
             searchableList.append(item)
-    return searchableList
+    logger.info(f'SEARCH LIST#::: {searchableList}')
+    return json.dumps(searchableList)
 
 # List the field which is required in the schema
 #https://stackoverflow.com/questions/31750725/get-required-fields-from-json-schema
