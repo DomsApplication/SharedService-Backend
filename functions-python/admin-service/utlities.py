@@ -33,25 +33,5 @@ def sendResponse(code, body):
     return Response(
         status_code=code, 
         content_type=content_types.APPLICATION_JSON, 
-        body= body
+        body= body  
         )
-
-def validateDataObject(_object: dict):
-    if _object is None:
-        message = f"Data-Object body is required."
-        raise DomsException(400, message)
-    elif _object["entity"] is None or _object["title"] is None or _object["version"] is None or _object["type"] is None:
-        message = f"Required field(s) is missed. Please contact Administrator."
-        raise DomsException(400, message)
-    else:
-        return True    
-
-def validateRequestBody(body: dict):
-    if body is None:
-        message = f"Request Body is required."
-        raise DomsException(400, message)
-    elif body.entity is None or body.unique_id is None:
-        message = f"Required field entity / unique_id is missed."
-        raise DomsException(400, message)
-    else:
-        return True    

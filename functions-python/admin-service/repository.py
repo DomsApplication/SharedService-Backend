@@ -5,6 +5,7 @@ from botocore.exceptions import ClientError
 from aws_lambda_powertools import Logger, Tracer
 from utlities import getDateTimeNow
 from models.RepoObject import RepoObject
+import constants
 
 tracer = Tracer()
 logger = Logger()
@@ -163,6 +164,15 @@ def getItemByEntityIndexPk(repo: RepoObject):
         exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {repo.unique_id} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logger.error(exception_value)
         raise ValueError(exception_value)
+
+# Get a JsonSchema from the dynamodb using entity name.
+@tracer.capture_method
+def get_schema(entityName):
+    schema = getItemByEntityIndexPk(constants.data_object_name, entityName)
+    logger.info("get_schema/schema", schema)
+    if schema is None:
+        raise ValueError(400, f"'Schema with the name '{entityName}' not exists.")
+    return json.loads(schema)
 
 @tracer.capture_method
 def dynamoDBDataType(dataType):

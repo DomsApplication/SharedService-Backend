@@ -1,7 +1,6 @@
 import json
 import jsonschema
 from aws_lambda_powertools import Logger, Tracer
-from repository import getItemByEntityIndexPk
 import DomsException
 
 tracer = Tracer()
@@ -11,32 +10,23 @@ logger = Logger()
 # https://json-schema.org/understanding-json-schema/reference/object
 # https://python-jsonschema.readthedocs.io/en/stable/validate/
 
-# Get a JsonSchema from the dynamodb using entity name.
+# Get unique Id from the given entity schema
 @tracer.capture_method
-def get_schema(entityName):
-    schema = getItemByEntityIndexPk('SCHEMA', entityName)
-    logger.info("get_schema/schema", schema)
-    if schema is None:
-        raise DomsException(400, f"'Schema with the name '{entityName}' not exists.")
-    return json.loads(schema)
-
-# validate the json data from the entity name
-@tracer.capture_method
-def validateJsonEntityName(entityName, json_data):
-    try:
-        schema = get_schema(entityName)
-        return validateJsonSchema(schema, json_data)
-    except Exception as err:
-        logger.error(err)        
-        raise Exception(err)
+def getUniqueIdFromSchema(entitySchema):
+    if 'version' not in entitySchema:
+        raise DomsException(400, {'error' : f"'version' field is missed in Schema {entitySchema['entity']}."})
+    elif 'uniquekey' not in entitySchema['properties']['entity']:
+        raise DomsException(400, {'error' : f"'entity.uniquekey' field is missed in Schema {entitySchema['entity']}."})
+    else:
+        return entitySchema['properties']['entity']['uniquekey']
 
 # validate the json data from the schema
 @tracer.capture_method
-def validateJsonSchema(schema, json_data):
+def validateRequestBodyWithDataObject(schema, data):
     try:
-        logger.info("validateJson/json_data", json_data)
+        logger.info("validateJson/json_data", data)
         logger.info("validateJson/schema", schema)
-        errors = jsonschema.Draft202012Validator(schema).iter_errors(json_data)
+        errors = jsonschema.Draft202012Validator(schema).iter_errors(data)
         err_list = []
         for error in errors:
             err_list.append(errorMessage(str(error.absolute_path), error.message))
@@ -54,11 +44,6 @@ def errorMessage(path, message):
     path = path.replace("deque(", "")
     path = path.replace(")", "")
     return ' : '.join([path, message])
-
-# Get a list of fields which is True of searchable.
-@tracer.capture_method
-def getSearchFieldsByEntityName(entityName, payload):
-    return getSearchFields(get_schema(entityName), payload)
 
 # Get a list of fields which is True of searchable.
 @tracer.capture_method
