@@ -191,14 +191,15 @@ def getItemByEntity(entityname: str):
                 ":IS_DELETED" : {
                     'BOOL' :  False
                 }
-            }
+            },
+            Limit = constants.DYNAMODB_MAX_FETCH_LIMIT
         )
         if 'Items' in response and len(response['Items']) == 0:
             return None
         elif 'Items' in response and len(response['Items']) > 0:
             responseitems = []
-            for item in response:
-                responseitems.append(item['PAYLOAD']['S'])
+            for item in response['Items']:
+                responseitems.append(json.loads(item['PAYLOAD']['S']))    
             return responseitems
     except ClientError as err:
         exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {entityname} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"

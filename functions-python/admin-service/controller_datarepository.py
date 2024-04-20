@@ -127,7 +127,7 @@ def get_data_object(entity_id: str):
 # Endpoint ------------------
 @router.get("/repository/<entity_id>/<repository_id>")
 @tracer.capture_method
-def get_data_object(entity_id: str, repository_id: str):
+def get_specific_data_object(entity_id: str, repository_id: str):
     try:
         repoObject = RepoObject(
             unique_id = repository_id, 
