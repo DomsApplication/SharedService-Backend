@@ -5,6 +5,7 @@ from botocore.exceptions import ClientError
 from aws_lambda_powertools import Logger, Tracer
 from utlities import getDateTimeNow
 from models.RepoObject import RepoObject
+import constants
 
 tracer = Tracer()
 logger = Logger()
@@ -40,12 +41,17 @@ def insertItem(repo: RepoObject):
         }
 
         # Add the searchable fields into Dynamo table item.
-        if repo.searchableField is not None:   
+        if repo.searchableField is not None:
             for serField in repo.searchableField:
                 for serFieldKey in serField:
-                    val = {}
-                    val[dynamoDBDataType(serField['type'])] = serField[serFieldKey]
-                    item[f'{serFieldKey}'] = val
+                    if 'type' in serFieldKey:
+                        _dtype = dynamoDBDataType(serField['type'])
+                    else:
+                        _skey = serFieldKey
+                        _sval = serField[serFieldKey]
+                val = {}
+                val[_dtype] = _sval
+                item[f'{_skey}'] = val
 
         # Persist the record
         response = dynamodb_client.put_item(
@@ -82,11 +88,17 @@ def updateItem(repo: RepoObject):
         if repo.searchableField is not None:  
             for serField in repo.searchableField:
                 for serFieldKey in serField:
-                    update_expression += f' #{serFieldKey} = :{serFieldKey},'  # Notice the "#" to solve issue with reserved keywords
-                    expression_attribute_names[f'#{serFieldKey}'] = serFieldKey
-                    val = {}
-                    val[dynamoDBDataType(serField['type'])] = serField[serFieldKey]
-                    expression_attribute_values[f':{serFieldKey}'] = val
+                    if 'type' in serFieldKey:
+                        _dtype = dynamoDBDataType(serField['type'])
+                    else:
+                        _skey = serFieldKey
+                        _sval = serField[serFieldKey]
+
+                update_expression += f' #{_skey} = :{_skey},'  # Notice the "#" to solve issue with reserved keywords
+                expression_attribute_names[f'#{_skey}'] = _skey
+                val = {}
+                val[_dtype] = _sval
+                expression_attribute_values[f':{_skey}'] = val
 
         response = dynamodb_client.update_item(
             TableName=DDB_TABLE_NAME,
@@ -163,6 +175,51 @@ def getItemByEntityIndexPk(repo: RepoObject):
         exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {repo.unique_id} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logger.error(exception_value)
         raise ValueError(exception_value)
+
+@tracer.capture_method
+def getItemByEntity(entityname: str):
+    try:
+        response = dynamodb_client.query(
+            TableName = DDB_TABLE_NAME,
+            IndexName = 'ENTITIES_INX',
+            KeyConditionExpression = 'ENTITIES = :_ENTITIES',
+            FilterExpression = 'IS_DELETED = :IS_DELETED',
+            ExpressionAttributeValues = {
+                ":_ENTITIES" : {
+                    'S' :  str(entityname)
+                },
+                ":IS_DELETED" : {
+                    'BOOL' :  False
+                }
+            },
+            Limit = constants.DYNAMODB_MAX_FETCH_LIMIT
+        )
+        if 'Items' in response and len(response['Items']) == 0:
+            return None
+        elif 'Items' in response and len(response['Items']) > 0:
+            responseitems = []
+            for item in response['Items']:
+                responseitems.append(json.loads(item['PAYLOAD']['S']))    
+            return responseitems
+    except ClientError as err:
+        exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {entityname} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        logger.error(exception_value)
+        raise ValueError(exception_value)
+
+# Get a JsonSchema from the dynamodb using entity name.
+@tracer.capture_method
+def get_schema(entityName):
+    repoObject = RepoObject(
+        unique_id = entityName, 
+        entity = constants.data_object_name, 
+        version = None, 
+        payload = None,
+        searchableField = None)
+    schema = getItemByEntityIndexPk(repoObject)
+    logger.info("get_schema/schema", schema)
+    if schema is None:
+        raise ValueError(400, f"'Schema with the name '{entityName}' not exists.")
+    return json.loads(schema)
 
 @tracer.capture_method
 def dynamoDBDataType(dataType):

@@ -1,7 +1,6 @@
 import json
 import jsonschema
 from aws_lambda_powertools import Logger, Tracer
-from repository import getItemByEntityIndexPk
 import DomsException
 
 tracer = Tracer()
@@ -11,32 +10,21 @@ logger = Logger()
 # https://json-schema.org/understanding-json-schema/reference/object
 # https://python-jsonschema.readthedocs.io/en/stable/validate/
 
-# Get a JsonSchema from the dynamodb using entity name.
+# Get unique Id from the given entity schema
 @tracer.capture_method
-def get_schema(entityName):
-    schema = getItemByEntityIndexPk('SCHEMA', entityName)
-    logger.info("get_schema/schema", schema)
-    if schema is None:
-        raise DomsException(400, f"'Schema with the name '{entityName}' not exists.")
-    return json.loads(schema)
-
-# validate the json data from the entity name
-@tracer.capture_method
-def validateJsonEntityName(entityName, json_data):
-    try:
-        schema = get_schema(entityName)
-        return validateJsonSchema(schema, json_data)
-    except Exception as err:
-        logger.error(err)        
-        raise Exception(err)
+def getUniqueIdFromSchema(entitySchema):
+    if 'version' not in entitySchema:
+        raise DomsException(400, {'error' : f"'version' field is missed in Schema {entitySchema['entity']}."})
+    elif 'uniquekey' not in entitySchema['properties']['entity']:
+        raise DomsException(400, {'error' : f"'entity.uniquekey' field is missed in Schema {entitySchema['entity']}."})
+    else:
+        return entitySchema['properties']['entity']['uniquekey']
 
 # validate the json data from the schema
 @tracer.capture_method
-def validateJsonSchema(schema, json_data):
+def validateRequestBodyWithDataObject(schema, data):
     try:
-        logger.info("validateJson/json_data", json_data)
-        logger.info("validateJson/schema", schema)
-        errors = jsonschema.Draft202012Validator(schema).iter_errors(json_data)
+        errors = jsonschema.Draft202012Validator(schema).iter_errors(data)
         err_list = []
         for error in errors:
             err_list.append(errorMessage(str(error.absolute_path), error.message))
@@ -45,7 +33,7 @@ def validateJsonSchema(schema, json_data):
         else:
             return False, '\n'.join(err_list)
     except jsonschema.exceptions.ValidationError as err:
-        logger.error(err)        
+        logger.error(f'VALIDATION ERROR:{err}')        
         raise Exception(err)
 
 # Prepare the validation error message as human readable format.
@@ -57,17 +45,14 @@ def errorMessage(path, message):
 
 # Get a list of fields which is True of searchable.
 @tracer.capture_method
-def getSearchFieldsByEntityName(entityName, payload):
-    return getSearchFields(get_schema(entityName), payload)
-
-# Get a list of fields which is True of searchable.
-@tracer.capture_method
 def getSearchFields(_entitySchema, payload):
+    logger.info(f'SEARCH schema#::: {_entitySchema}')
+    logger.info(f'SEARCH payload#::: {payload}')
     searchableList = []
     # Loop along dictionary keys
     for field_key in _entitySchema['properties']:
         field = _entitySchema['properties'][field_key]
-        if field['searchable'] is True:
+        if 'searchable' in field and field['searchable'] is True:
             ply_key = field_key
             ply_type = field['type']
             ply_value = payload[field_key]
@@ -75,7 +60,8 @@ def getSearchFields(_entitySchema, payload):
             item[ply_key] = ply_value
             item['type'] = ply_type
             searchableList.append(item)
-    return searchableList
+    logger.info(f'SEARCH LIST#::: {searchableList}')
+    return json.dumps(searchableList)
 
 # List the field which is required in the schema
 #https://stackoverflow.com/questions/31750725/get-required-fields-from-json-schema
