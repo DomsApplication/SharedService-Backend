@@ -20,7 +20,8 @@ def create_data_repository():
         body: dict = router.current_event.json_body  # deserialize json str to dict
         logger.info(f"REPO DICT details: {body}")
         entityName, uniquekey, uniquevalue, version, schema = validateDataRepository(body)
-        
+        logger.info(f"entityName:{entityName}, uniquekey:{uniquekey}, uniquevalue:{uniquevalue}, version:{version}, schema:{schema}")
+
         is_valid, message = validateRequestBodyWithDataObject(schema, json.loads(body))
         logger.info("app/is_valid", is_valid)
         if not is_valid:
@@ -63,16 +64,22 @@ def validateDataRepository(_body: dict):
         raise DomsException(400, message)
     else:
         try:
+            logger.info("validateDataRepository")
             entityName = _body["entity"]
+            logger.info(f'entityName:{entityName}')
             schema = get_schema(entityName)
+            logger.info(f'schema:{schema}')
             uniquekey = getUniqueIdFromSchema(schema)
-
+            logger.info(f'uniquekey:{uniquekey}')
+            
             if _body[uniquekey] is None:
                 raise DomsException(400, {'error' : f"'uniqueId' field is missed in Schema {entityName}."})
             uniquevalue =  _body[uniquekey]
             if uniquevalue is None:
                 raise DomsException(400, {'error' : f"'uniqueId' field value is missed in request body."})
+            logger.info(f'before version')
             version = schema['version']
+            logger.info(f'version:{version}')
             return entityName, uniquekey, uniquevalue, version, schema            
         except Exception as err:
             logger.error(err)        
