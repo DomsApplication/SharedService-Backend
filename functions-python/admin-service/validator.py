@@ -52,7 +52,7 @@ def getSearchFields(_entitySchema, payload):
     # Loop along dictionary keys
     for field_key in _entitySchema['properties']:
         field = _entitySchema['properties'][field_key]
-        if field['searchable'] is True:
+        if  field['searchable'] is not None and field['searchable'] is True:
             ply_key = field_key
             ply_type = field['type']
             ply_value = payload[field_key]
