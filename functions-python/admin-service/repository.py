@@ -176,6 +176,35 @@ def getItemByEntityIndexPk(repo: RepoObject):
         logger.error(exception_value)
         raise ValueError(exception_value)
 
+@tracer.capture_method
+def getItemByEntity(entityname: str):
+    try:
+        response = dynamodb_client.query(
+            TableName = DDB_TABLE_NAME,
+            IndexName = 'ENTITIES_INX',
+            KeyConditionExpression = 'ENTITIES = :_ENTITIES',
+            FilterExpression = 'IS_DELETED = :IS_DELETED',
+            ExpressionAttributeValues = {
+                ":_ENTITIES" : {
+                    'S' :  str(entityname)
+                },
+                ":IS_DELETED" : {
+                    'BOOL' :  False
+                }
+            }
+        )
+        if 'Items' in response and len(response['Items']) == 0:
+            return None
+        elif 'Items' in response and len(response['Items']) > 0:
+            responseitems = []
+            for item in response:
+                responseitems.append(item['PAYLOAD']['S'])
+            return responseitems
+    except ClientError as err:
+        exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {entityname} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        logger.error(exception_value)
+        raise ValueError(exception_value)
+
 # Get a JsonSchema from the dynamodb using entity name.
 @tracer.capture_method
 def get_schema(entityName):

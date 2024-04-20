@@ -115,7 +115,7 @@ def delete_data_object(object_id: str):
             raise DomsException(400, f"'{constants.data_object_name} with the name '{object_id}' is not exists to delete.")
 
         deleteItem(repoObject)
-        message = f"Item '{object_id}' is created successfully for the {constants.data_object_name}."
+        message = f"Item '{object_id}' is deleted successfully for the {constants.data_object_name}."
         return sendResponse(204, message)
     except DomsException as err:
         logger.error(f'DomsException in delete_data_object: {str(err.message)}')
