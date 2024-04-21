@@ -94,6 +94,7 @@ def updateItem(repo: RepoObject):
                         _skey = serFieldKey
                         _sval = serField[serFieldKey]
 
+                update_expression += ', ' 
                 update_expression += f' #{_skey} = :{_skey},'  # Notice the "#" to solve issue with reserved keywords
                 expression_attribute_names[f'#{_skey}'] = _skey
                 val = {}

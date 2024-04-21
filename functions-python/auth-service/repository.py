@@ -43,6 +43,7 @@ def validateUserLogin(login: Login):
                 }
             }
         )
+        logger.info(f"VALIDATION userLogin/len: {len(response['Items'])}")
         if 'Items' in response and len(response['Items']) == 0:
             return None
         elif 'Items' in response and len(response['Items']) > 1:
