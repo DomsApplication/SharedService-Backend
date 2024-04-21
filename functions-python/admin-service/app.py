@@ -14,8 +14,15 @@ tracer = Tracer()
 logger = Logger()
 
 base_endpoint = "/api/admin"
-cors_config = CORSConfig(allow_origin="*", allow_credentials=True, allow_headers=["X-Caller-Id", "X-Signature", "X-Request-Id", "Authorization"], max_age=60000)
-app = APIGatewayRestResolver(enable_validation=True, cors=cors_config)    
+cors_config = CORSConfig(
+    allow_origin="http://localhost:3000", 
+    extra_origins=["http://localhost:5173", "http://localhost:5174", "https://*.amazonaws.com"], 
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "DELETE", "PUT", "OPTIONS", "HEAD"] 
+    allow_headers=["Content-Type", "Content-Disposition", "Accept", "Authorization", "x-xsrf-tokens", "access-control-max-age", "origin"], 
+    expose_headers=["Content-Type", "Content-Disposition", "Accept", "Authorization", "x-xsrf-tokens"],
+    max_age=1800000)
+app = APIGatewayRestResolver(enable_validation = True, cors = cors_config)    
 app.enable_swagger(path= f"{base_endpoint}/swagger")
 app.include_router(controller_dataobject.router, prefix=base_endpoint)
 app.include_router(controller_datarepository.router, prefix=base_endpoint)
