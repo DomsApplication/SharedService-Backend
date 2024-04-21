@@ -85,7 +85,8 @@ def updateItem(repo: RepoObject):
         }
 
         # Add the searchable fields into Dynamo table item.
-        if repo.searchableField is not None:  
+        if repo.searchableField is not None:
+            update_expression += ', ' 
             for serField in repo.searchableField:
                 for serFieldKey in serField:
                     if 'type' in serFieldKey:
@@ -94,7 +95,6 @@ def updateItem(repo: RepoObject):
                         _skey = serFieldKey
                         _sval = serField[serFieldKey]
 
-                update_expression += ', ' 
                 update_expression += f' #{_skey} = :{_skey},'  # Notice the "#" to solve issue with reserved keywords
                 expression_attribute_names[f'#{_skey}'] = _skey
                 val = {}
