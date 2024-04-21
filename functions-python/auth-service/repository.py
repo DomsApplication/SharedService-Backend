@@ -4,7 +4,6 @@ import boto3
 from botocore.exceptions import ClientError
 from aws_lambda_powertools import Logger, Tracer
 from utlities import getDateTimeNow
-from models.RepoObject import RepoObject
 from model_login import Login
 import constants
 

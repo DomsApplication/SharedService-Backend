@@ -154,6 +154,7 @@ Resources:
     Properties:
       PolicyName: LambdaDynamoDBAccess
       Roles:
+        - !Ref AuthenticationLambdaExecutionRole
         - !Ref adminLambdaExecutionRole
       PolicyDocument:
         Version: 2012-10-17
