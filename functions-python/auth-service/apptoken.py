@@ -8,7 +8,7 @@ logger = Logger()
 
 JWT_SECRET = 'secret'
 JWT_ALGORITHM = 'HS256'
-JWT_EXP_DELTA_SECONDS = 1000 * 60 * 5
+JWT_EXP_DELTA_SECONDS = 1000 * 60 * 30
 
 @tracer.capture_method
 def generateToken(login: Login):

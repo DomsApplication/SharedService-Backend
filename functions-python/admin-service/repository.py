@@ -85,7 +85,8 @@ def updateItem(repo: RepoObject):
         }
 
         # Add the searchable fields into Dynamo table item.
-        if repo.searchableField is not None:  
+        if repo.searchableField is not None:
+            update_expression += ', ' 
             for serField in repo.searchableField:
                 for serFieldKey in serField:
                     if 'type' in serFieldKey:
