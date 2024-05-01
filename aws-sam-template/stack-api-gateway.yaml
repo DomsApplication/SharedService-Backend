@@ -57,6 +57,19 @@ Resources:
       Description: staging the auth rest api
       RestApiId: !Ref restApiGateway
       StageName: !Ref ApiGatewayStageName
+  # <<<<<<< rest-api {v1}  Gateway response 401/UNAUTHORIZED >>>>>>>>>>>
+  GatewayResponseDefault401:
+    Type: 'AWS::ApiGateway::GatewayResponse'
+    Properties:
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Credentials: "'true'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Content-Disposition,Accept,Authorization,x-xsrf-tokens,access-control-max-age,origin'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+        gatewayresponse.header.Access-Control-Expose-Headers: "'Content-Type,Content-Disposition,Accept,Authorization,x-xsrf-tokens'"
+        gatewayresponse.header.Access-Control-Max-Age: "'1800000'"
+      ResponseType: UNAUTHORIZED
+      RestApiId: !Ref restApiGateway
 
   #
   #
