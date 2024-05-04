@@ -2,7 +2,7 @@ import json
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler.api_gateway import Router
 
-from repository import getItemByEntityIndexPk, insertItem, deleteItem, updateItem
+from repository import getItemByEntityIndexPk, insertItem, deleteItem, updateItem, getItemByEntity
 from models.RepoObject import RepoObject
 from utlities import sendResponse
 from DomsException import DomsException
@@ -75,7 +75,31 @@ def create_data_object():
         logger.error(f"Exception in create_data_object: {error}")
         return sendResponse(500, {'error' : str(error)})
 
-# Endpoint ------------------
+# Endpoint Get all OR search -------------
+@router.get("/object")
+@tracer.capture_method
+def get_data_object():
+    try:
+        object_search: str = router.current_event.get_query_string_value(name="search", default_value="")
+        repoObject = RepoObject(
+            unique_id = object_search, 
+            entity = constants.data_object_name, 
+            version = None, 
+            payload = None,
+            searchableField = None)
+
+        schemas = getItemByEntity(repoObject)
+        if schemas is None:
+            raise DomsException(400, f"'{constants.data_object_name} with the name '{object_id}' is not exists.")
+        return sendResponse(200, schemas)
+    except DomsException as err:
+        logger.error(f'DomsException in get_data_object: {str(err.message)}')
+        return sendResponse(err.error_code, {'error' : str(err.message)})
+    except Exception as error:
+        logger.error(f"Exception in get_data_object: {error}")
+        return sendResponse(500, {'error' : str(error)})
+
+# Endpoint get indivisual ------------
 @router.get("/object/<object_id>")
 @tracer.capture_method
 def get_data_object(object_id: str):
@@ -123,8 +147,6 @@ def delete_data_object(object_id: str):
     except Exception as error:
         logger.error(f"Exception in delete_data_object: {error}")
         return sendResponse(500, {'error' : str(error)})
-
-
 
 
 ###################################################
