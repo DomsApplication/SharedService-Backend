@@ -20,7 +20,6 @@ cors_config = CORSConfig(
     expose_headers=["Content-Type", "Content-Disposition", "Accept", "Authorization", "x-xsrf-tokens"],
     max_age=1800000)
 app = APIGatewayRestResolver(enable_validation = True, cors = cors_config)    
-#app = APIGatewayRestResolver(enable_validation = True)    
 app.enable_swagger(path= f"{base_endpoint}/swagger")
 app.include_router(controller_login.router, prefix=base_endpoint)
 app.get_openapi_json_schema(title="DOMS application", version="1.0.0", description="Doms application repository service endpoints.")

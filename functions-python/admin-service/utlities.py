@@ -32,6 +32,6 @@ def getCurrentMilliSec():
 def sendResponse(code, body):
     return Response(
         status_code=code, 
-        content_type=content_types.APPLICATION_JSON, 
+        content_type=content_types.APPLICATION_JSON,
         body= body  
         )
