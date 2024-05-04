@@ -104,7 +104,7 @@ def delete_data_repository(entity_id: str, repository_id: str):
         logger.error(f"Exception in delete_data_object: {error}")
         return sendResponse(500, {'error' : str(error)})
 
-# Endpoint ------------------
+# Endpoint --Get all or search based on entity ----------------
 @router.get("/repository/<entity_id>")
 @tracer.capture_method
 def get_data_object(entity_id: str):
@@ -113,9 +113,17 @@ def get_data_object(entity_id: str):
         if schema is None:
             raise DomsException(400, f"'Entity with the name '{entity_id}' is not exists.")
 
-        data = getItemByEntity(entity_id)
+        object_search: str = router.current_event.get_query_string_value(name="search", default_value="")
+        repoObject = RepoObject(
+            unique_id = object_search, 
+            entity = entity_id, 
+            version = None, 
+            payload = None,
+            searchableField = None)
+
+        data = getItemByEntity(repoObject)
         if data is None:
-            raise DomsException(400, f"Record not found for the entity with the name '{entity_id}'.")
+            raise DomsException(400, f"Record(s) not found for the entity with the name '{entity_id}'.")
         return sendResponse(200, data)
     except DomsException as err:
         logger.error(f'DomsException in get_data_object: {str(err.message)}')
@@ -124,7 +132,7 @@ def get_data_object(entity_id: str):
         logger.error(f"Exception in get_data_object: {error}")
         return sendResponse(500, {'error' : str(error)})
 
-# Endpoint ------------------
+# Endpoint Get single based on enity ------------------
 @router.get("/repository/<entity_id>/<repository_id>")
 @tracer.capture_method
 def get_specific_data_object(entity_id: str, repository_id: str):
