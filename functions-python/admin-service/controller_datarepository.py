@@ -123,7 +123,7 @@ def get_data_object(entity_id: str):
 
         data = getItemByEntity(repoObject)
         if data is None:
-            raise DomsException(400, f"Record not found for the entity with the name '{entity_id}'.")
+            raise DomsException(400, f"Record(s) not found for the entity with the name '{entity_id}'.")
         return sendResponse(200, data)
     except DomsException as err:
         logger.error(f'DomsException in get_data_object: {str(err.message)}')

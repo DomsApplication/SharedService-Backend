@@ -2,7 +2,7 @@ import json
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.event_handler.api_gateway import Router
 
-from repository import getItemByEntityIndexPk, insertItem, deleteItem, updateItem, getItemByEntity
+from repository import getItemByEntityIndexPk, insertItem, deleteItem, updateItem, getItemByEntity, getItemCountByEntity
 from models.RepoObject import RepoObject
 from utlities import sendResponse
 from DomsException import DomsException
@@ -13,7 +13,7 @@ logger = Logger()
 router = Router()
 
 
-# Endpoint ------------------
+# Endpoint POST------------------
 @router.post("/object")
 @tracer.capture_method
 def create_data_object():
@@ -44,7 +44,7 @@ def create_data_object():
         logger.error(f"Exception in create_data_object: {error}")
         return sendResponse(500, {'error' : str(error)})
 
-# Endpoint ------------------
+# Endpoint PUT ------------------
 @router.put("/object")
 @tracer.capture_method
 def create_data_object():
@@ -90,8 +90,15 @@ def get_data_object():
 
         schemas = getItemByEntity(repoObject)
         if schemas is None:
-            raise DomsException(400, f"'{constants.data_object_name} with the name '{object_id}' is not exists.")
-        return sendResponse(200, schemas)
+            raise DomsException(400, f"'{constants.data_object_name} is empty.")
+        
+        return_schema = []
+        for schema in schemas:
+            _entityName = schema['entity']
+            __repoObject__ = RepoObject(unique_id = "", entity = _entityName,  version = None,  payload = None, searchableField = None)
+            schema["repository_count"] = getItemCountByEntity(__repoObject__)
+            return_schema.append(schema)
+        return sendResponse(200, return_schema)
     except DomsException as err:
         logger.error(f'DomsException in get_data_object: {str(err.message)}')
         return sendResponse(err.error_code, {'error' : str(err.message)})
@@ -122,7 +129,7 @@ def get_data_object(object_id: str):
         logger.error(f"Exception in get_data_object: {error}")
         return sendResponse(500, {'error' : str(error)})
 
-# Endpoint ------------------
+# Endpoint DELETE ------------------
 @router.delete("/object/<object_id>")
 @tracer.capture_method
 def delete_data_object(object_id: str):

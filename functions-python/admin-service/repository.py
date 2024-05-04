@@ -240,6 +240,32 @@ def getItemByEntity(repo: RepoObject):
         logger.error(exception_value)
         raise ValueError(exception_value)
 
+@tracer.capture_method
+def getItemCountByEntity(repo: RepoObject):
+    try:
+        response = dynamodb_client.query(
+            TableName = DDB_TABLE_NAME,
+            IndexName = 'ENTITIES_INX',
+            KeyConditionExpression = 'ENTITIES = :_ENTITIES',
+            FilterExpression = 'contains(SK, :_sk) and IS_DELETED = :IS_DELETED',
+            ExpressionAttributeValues = {
+                ":_ENTITIES" : {
+                    'S' :  str(repo.entity)
+                },
+                ":_sk" : {
+                    'S' :  str(repo.unique_id)
+                },
+                ":IS_DELETED" : {
+                    'BOOL' :  False
+                }
+            }
+        )
+        return response['Count']
+    except ClientError as err:
+        exception_value = f"Exception in get item count {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {repo.entity} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        logger.error(exception_value)
+        raise ValueError(exception_value)
+
 # Get a JsonSchema from the dynamodb using entity name.
 @tracer.capture_method
 def get_schema(entityName):
