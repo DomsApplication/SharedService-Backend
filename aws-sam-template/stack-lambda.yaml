@@ -78,7 +78,7 @@ Resources:
     Properties:
       LayerName: !Join [ "-", [!Ref StackName, "python-libraries"]] 
       Description: Dependencies for the blank-python sample app.
-      ContentUri: ../functions-python/layer/.
+      ContentUri: ../functions-python/core_lib/build/.
       CompatibleRuntimes:
         - python3.12
 
