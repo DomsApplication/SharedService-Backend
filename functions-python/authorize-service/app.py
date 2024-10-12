@@ -1,10 +1,21 @@
-import jwt
 import time
 from logger import logInfo, logError
+import json
+import jwt  # PyJWT library
+import urllib.request
+from jwt.algorithms import RSAAlgorithm
 
-JWT_SECRET = 'secret'
-JWT_ALGORITHM = 'HS256'
-JWT_EXP_DELTA_SECONDS = 1000 * 60 * 5
+# Load the Auth0 domain and API audience from environment variables
+AUTH0_DOMAIN = "your-auth0-domain"
+AUTH0_AUDIENCE = "your-auth0-audience"
+
+# JWKS (JSON Web Key Set) URL for Auth0
+JWKS_URL = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
+
+def get_jwks():
+    """Fetch the JWKS from Auth0 to verify the JWT signature."""
+    with urllib.request.urlopen(JWKS_URL) as response:
+        return json.load(response)
 
 def lambda_handler(event, context):
     principalId = 'Unauthorized'
@@ -31,11 +42,6 @@ def lambda_handler(event, context):
         logError('Exception in main function', error)
         return generateAuthResponse(principalId, 'Deny', methodArn)
 
-
-def isExpired(exp):
-    tokenTime = int(exp)
-    currentTime = int(round(time.time() * 1000))
-    return (int(currentTime) > int(tokenTime)) 
 
 def generateAuthResponse(principalId, effect, methodArn):
     policyDocument = generatepolicyDocument(effect, methodArn)

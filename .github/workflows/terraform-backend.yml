@@ -1,0 +1,271 @@
+name: 2. Terraform frontend provision
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "this is environment"
+        required: true
+        type: environment
+        default: 'dev'
+      working-directory:
+        description: "working direcory"
+        required: false
+        type: string
+        default: "./terraform"
+      function-directory:
+        description: "function direcory"
+        required: false
+        type: string
+        default: "./functions-python"
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  infracost:
+    name: Infracost Analysis
+    runs-on: ubuntu-latest
+    env:
+      TF_ROOT: ${{ inputs.working-directory }}
+    environment: ${{ inputs.env || 'dev' }}
+
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.0
+        with:
+          egress-policy: audit
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v3     
+
+      - name: Print debug info
+        run: |
+          echo environment: ${{ inputs.env }}
+          echo TF_ROOT: ${TF_ROOT}
+          echo terraform-var-file: ${{ inputs.terraform-var-file }}
+
+      # Generate Infracost json file
+      - name: Generate Infracost estimate
+        run: |
+          # passes a NPM_TOKEN which has access to private repo as client app doesn't pass such credential in when calling tf composite module.
+          # credit: https://github.com/hashicorp/setup-terraform/issues/33
+          git config --global url."https://oauth2:${{ secrets.NPM_TOKEN }}@github.com".insteadOf https://github.com
+          export INFRACOST_API_KEY=${{ secrets.INFRACOST_API_KEY }}
+          cd ${TF_ROOT}
+          infracost breakdown --path=. \
+                              --terraform-var-file=./.env/${{ github.event.inputs.env || 'dev' }}/terraform.tfvars \
+                              --usage-file ./.env/${{ github.event.inputs.env || 'dev' }}/infracost-usage.yml \
+                              --format=json \
+                              --out-file=/tmp/infracost.json
+
+      # Post a comment to the PR using the 'update' behavior.
+      # This creates a single comment and updates it. The "quietest" option.
+      # The other valid behaviors are:
+      # delete-and-new: Delete previous comment and create a new one.
+      # hide-and-new: Minimize previous comment and create a new one.
+      # new: new cost estimate comment on every push.
+      # update: Update a cost estimate comment when there is a changes in the cost estimate.
+      # Also refer the https://www.infracost.io/docs/features/cli_commands/#comment-on-pull-requests 
+      - name: Post Infracost comment
+        run: |
+          export INFRACOST_API_KEY=${{ secrets.INFRACOST_API_KEY }}
+          infracost comment github --path=/tmp/infracost.json \
+                                   --repo=$GITHUB_REPOSITORY \
+                                   --github-token=${{github.token}} \
+                                   --commit=$GITHUB_SHA \
+                                   --behavior=new \
+                                   --policy-path=${TF_ROOT}/infracost-policy.rego                   
+
+  terraform:
+    name: Terraform Run
+    needs: infracost
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    environment: ${{ inputs.env || 'dev' }}
+
+    env:
+      ROLE_TO_ASSUME: ${{ secrets.ROLE_TO_ASSUME }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      DEPLOY_REPO: ${{ github.repository }}
+      DEPLOY_ENV: ${{ github.event.inputs.environment || 'dev' }}
+
+    # dependabot PRs do not need to run this flow as GitHub prohibits dependabot PRs to access workflows
+    # dealing with secrets due to security reason.
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          #aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          #aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+
+      - name: Cache plugin Directory
+        uses: actions/cache@v4
+        with:
+          path: ~/.tflint.d/plugins 
+          key: ubuntu-latest-tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - name: Setup TFlint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Show version
+        run: tflint --version
+
+      - name: Init TFLint
+        run: tflint --init              
+
+      - name: Run TFLint
+        run: tflint -f compact        
+
+      - name: Run Terrascan
+        uses: tenable/terrascan-action@main
+        with:
+          iac_type: 'terraform'
+          iac_version: 'v14'
+          iac_dir: ${{ inputs.working-directory }}
+          policy_type: 'aws'
+          only_warn: true       
+          scm_token: ${{ secrets.NPM_TOKEN }}
+          verbose: true
+          sarif_upload: true
+          #non_recursive:
+          #iac_dir:
+          #policy_path:
+          #skip_rules:
+          #config_path:
+          #find_vulnerabilities:
+          #webhook_url:
+          #webhook_token:
+
+      - name: Run Checkov action
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: ${{ inputs.working-directory }}
+          quiet: true # optional: display only failed checks
+          soft_fail: true # optional: do not return an error code if there are failed checks
+          framework: terraform # optional: run only on a specific infrastructure {cloudformation,terraform,kubernetes,all}
+          output_format: sarif # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif. Default: sarif
+          output_file_path: reports/results.sarif # folder and name of results file
+          download_external_modules: true # optional: download external terraform modules from public git repositories and terraform registry
+          log_level: DEBUG # optional: set log level. Default WARNING
+          #file: example/tfplan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
+          #check: CKV_AWS_1 # optional: run only a specific check_id. can be comma separated list
+          #skip_check: CKV_AWS_2 # optional: skip a specific check_id. can be comma separated list
+          #skip_framework: terraform # optional: skip a specific infrastructure {cloudformation,terraform,kubernetes,all}
+          #skip_cve_package: CVE_2019_8331 # optional: skip a specific CVE package in SCA scans, can be comma separated list
+          #output_bc_ids: true # optional: output Bridgecrew platform IDs instead of checkov IDs
+          #repo_root_for_plan_enrichment: example/ #optional: Directory containing the hcl code used to generate a given terraform plan file. Use together with `file`
+          #var_file: ./testdir/gocd.yaml # optional: variable files to load in addition to the default files. Currently only supported for source Terraform and Helm chart scans.
+          #config_file: path/this_file
+          #baseline: cloudformation/.checkov.baseline # optional: Path to a generated baseline file. Will only report results not in the baseline.
+          #container_user: 1000 # optional: Define what UID and / or what GID to run the container under to prevent permission issues
+          #use_enforcement_rules: true # optional - use enforcement rule configs from the platform
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with: 
+          terraform_wrapper: false # The wrapper script installation can be skipped by setting the terraform_wrapper variable to false:
+
+      - name: Print debug info
+        run: |
+          echo github owner: ${{  github.repository_owner }}
+          echo github actor: ${{  github.actor }}
+          echo environment: ${{ github.event.inputs.env }}
+          echo working-directory: ${{ inputs.working-directory }}
+          echo repository: ${{ github.repository }}
+          echo deploy_repo: ${{ github.event.repository.name }}
+          echo deploy_env: ${{ github.event.inputs.env }}
+          echo branch/tag name: ${{ github.ref_name }}
+          echo sts get-caller-identity
+          echo ROLE_TO_ASSUME: ${{ secrets.ROLE_TO_ASSUME }} | sed -e 's/\(.\)/\1 /g'
+          echo TERRAFORM_ROLE_TO_ASSUME: ${{ secrets.TERRAFORM_ROLE_TO_ASSUME }} | sed -e 's/\(.\)/\1 /g'
+
+      - name: Create json file from github secrets
+        uses: jsdaniell/create-json@v1.2.3
+        with: 
+          name: "secrets.json"
+          json: ${{ secrets.SECRET_VALUE }}
+          dir: ${{ inputs.working-directory }}
+
+      - name: Terraform Init
+        id: init
+        run: | 
+          # passes a NPM_TOKEN which has access to private repo as client app doesn't pass such credential in when calling tf composite module.
+          # credit: https://github.com/hashicorp/setup-terraform/issues/33
+          git config --global url."https://oauth2:${{ secrets.NPM_TOKEN }}@github.com".insteadOf https://github.com
+          rm -rf .trraform
+          terraform init -backend-config='./.env/${{ github.event.inputs.environment || 'dev' }}/backend.tfvars' -upgrade=true -input=false
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          # Convert repo and env to lower case and pass to terraform as env variables
+          export TF_VAR_github_owner=${{ github.repository_owner }}
+          export TF_VAR_deploy_repo=${{ github.event.repository.name }}
+          export TF_VAR_deploy_env=${{ github.event.inputs.env }}
+          export TF_VAR_deploy_user=${GITHUB_ACTOR}
+          export TF_VAR_pipeline_token=${{ secrets.PIPELINE_TOKEN }}
+          export TF_VAR_function_directory=${{ inputs.function-directory }}
+          export TF_VAR_aws_region=${{ secrets.AWS_REGION }}
+          terraform plan -input=false -var-file=.env/${{ github.event.inputs.environment || 'dev' }}/terraform.tfvars
+
+      - name: Terraform Apply
+        if: ${{ github.ref != 'ref/heads/destroy' }}
+        id: apply
+        run: |
+          # Convert repo and env to lower case and pass to terraform as env variables
+          export TF_VAR_github_owner=${{ github.repository_owner }}
+          export TF_VAR_deploy_repo=${{ github.event.repository.name }}
+          export TF_VAR_deploy_env=${{ github.event.inputs.env }}
+          export TF_VAR_deploy_user=${GITHUB_ACTOR}
+          export TF_VAR_pipeline_token=${{ secrets.PIPELINE_TOKEN }}
+          export TF_VAR_function_directory=${{ inputs.function-directory }}
+          export TF_VAR_aws_region=${{ secrets.AWS_REGION }}
+          terraform apply -auto-approve -input=false -var-file=.env/${{ github.event.inputs.environment || 'dev' }}/terraform.tfvars
+
+      - name: Terraform Destroy
+        if: ${{ github.ref == 'ref/heads/destroy' }}
+        id: destroy
+        run: |
+          # Convert repo and env to lower case and pass to terraform as env variables
+          export TF_VAR_github_owner=${{ github.repository_owner }}
+          export TF_VAR_deploy_repo=${{ github.event.repository.name }}
+          export TF_VAR_deploy_env=${{ github.event.inputs.env }}
+          export TF_VAR_deploy_user=${GITHUB_ACTOR}
+          export TF_VAR_pipeline_token=${{ secrets.PIPELINE_TOKEN }}
+          export TF_VAR_function_directory=${{ inputs.function-directory }}
+          export TF_VAR_aws_region=${{ secrets.AWS_REGION }}
+          terraform destroy -auto-approve -input=false -var-file=.env/${{ github.event.inputs.environment || 'dev' }}/terraform.tfvars
+   
