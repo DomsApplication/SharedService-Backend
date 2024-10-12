@@ -29,8 +29,8 @@ def insertItem(repo: RepoObject):
         item = {
             "PK" : { 'S' : repo.unique_id },
             "SK" : { 'S' : repo.unique_id },
-            "ENTITIES" : { 'S' :  repo.entity },
-            "MAPPINGS" : { 'S' :  repo.entity },
+            "ENTITIES" : { 'S' :  repo.entity.upper() },
+            "MAPPINGS" : { 'S' :  repo.entity.upper() },
             "VERSION" : { 'N' :  str(repo.version) },
             "IS_DELETED" : { 'BOOL' :  False },
             "PAYLOAD" : { 'S' :  json.dumps(repo.payload) },
@@ -81,7 +81,7 @@ def updateItem(repo: RepoObject):
                 ':version': {'S' : str(repo.version)},
                 ':modifiedby': {'S' : 'task_user'},
                 ':modifiedon': {'S' : str(getDateTimeNow())},
-                ':_ENTITIES' : {'S' : str(repo.entity)}
+                ':_ENTITIES' : {'S' : str(repo.entity.upper())}
         }
 
         # Add the searchable fields into Dynamo table item.
@@ -131,7 +131,7 @@ def deleteItem(repo: RepoObject):
             ConditionExpression='ENTITIES = :_ENTITIES',
             ExpressionAttributeValues = {
                 ":_ENTITIES" : {
-                    'S' :  str(repo.entity)
+                    'S' :  str(repo.entity.upper())
                 }
             }
         )
@@ -151,7 +151,7 @@ def getItemByEntityIndexPk(repo: RepoObject):
             FilterExpression = 'SK = :_sk and IS_DELETED = :IS_DELETED',
             ExpressionAttributeValues = {
                 ":_ENTITIES" : {
-                    'S' :  str(repo.entity)
+                    'S' :  str(repo.entity.upper())
                 },
                 ":_pk" : {
                     'S' :  str(repo.unique_id)
@@ -217,7 +217,7 @@ def getItemByEntity(repo: RepoObject):
             FilterExpression = 'contains(SK, :_sk) and IS_DELETED = :IS_DELETED',
             ExpressionAttributeValues = {
                 ":_ENTITIES" : {
-                    'S' :  str(repo.entity)
+                    'S' :  str(repo.entity.upper())
                 },
                 ":_sk" : {
                     'S' :  str(repo.unique_id)
@@ -236,7 +236,7 @@ def getItemByEntity(repo: RepoObject):
                 responseitems.append(json.loads(item['PAYLOAD']['S']))    
             return responseitems
     except ClientError as err:
-        exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {repo.entity} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        exception_value = f"Exception in get item {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {repo.entity.upper()} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logger.error(exception_value)
         raise ValueError(exception_value)
 
@@ -250,7 +250,7 @@ def getItemCountByEntity(repo: RepoObject):
             FilterExpression = 'contains(SK, :_sk) and IS_DELETED = :IS_DELETED',
             ExpressionAttributeValues = {
                 ":_ENTITIES" : {
-                    'S' :  str(repo.entity)
+                    'S' :  str(repo.entity.upper())
                 },
                 ":_sk" : {
                     'S' :  str(repo.unique_id)
@@ -262,7 +262,7 @@ def getItemCountByEntity(repo: RepoObject):
         )
         return response['Count']
     except ClientError as err:
-        exception_value = f"Exception in get item count {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {repo.entity} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
+        exception_value = f"Exception in get item count {DDB_TABLE_NAME} by index: 'ENTITIES-IDX' for {repo.entity.upper()} from the query, {err.response['Error']['Code']}: {err.response['Error']['Message']}"
         logger.error(exception_value)
         raise ValueError(exception_value)
 
