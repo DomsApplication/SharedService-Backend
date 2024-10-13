@@ -151,7 +151,7 @@ jobs:
           cd ..
           echo "Current directory/2: $(pwd)"
           ls -la
-          cd /functions-python/core-lib
+          cd functions-python/core-lib
           echo "Current directory/3: $(pwd)"
           mkdir -p build/python
           cp -r core-lib/ build/python/
