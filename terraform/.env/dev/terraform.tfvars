@@ -6,6 +6,5 @@ customer_name   = "development"
 revenue_type    = "non-rev"
 requestor_name  = "mahesha"
 
-data_source_name    = ""
-lambda_names        = ["authentication", "authorization", "admin"]
+lambda_names        = ["administrator-service", "authorize-service", "object-data-model-service"]
 api_gateway_stage_name = "v1"

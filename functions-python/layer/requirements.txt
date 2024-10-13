@@ -1,6 +1,0 @@
-pyjwt
-jsonschema==4.17.3
-aws-lambda-powertools[all]==2.36.0
-pytest==7.2.1
-requests
-email-validator
