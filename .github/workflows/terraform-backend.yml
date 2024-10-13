@@ -44,7 +44,7 @@ jobs:
       TF_ROOT: ${{ inputs.working-directory }}
     environment: ${{ inputs.env || 'dev' }}
 
-    if: github.actor != 'dependabot[bot]' && ${{ github.event.inputs.run_option == 'true' }}
+    if: github.actor != 'dependabot[bot]' && ${{ inputs.infracost-verify-required == 'true' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.0
@@ -64,18 +64,6 @@ jobs:
           echo environment: ${{ inputs.env }}
           echo TF_ROOT: ${TF_ROOT}
           echo terraform-var-file: ${{ inputs.terraform-var-file }}
-
-      - name: Build core-lib
-        run: |
-          cd ${{ inputs.function-directory }}/core-lib
-          mkdir -p build/python
-          cp -r core_lib/ build/python/
-          cp -r requirements.txt build/
-          cp -r README.md build/
-          cd build
-          pip install -r requirements.txt -t python/
-          zip -r core-lib-layer.zip python/
-          rm -rf python/
 
       # Generate Infracost json file
       - name: Generate Infracost estimate
@@ -154,6 +142,18 @@ jobs:
         with:
           path: ~/.tflint.d/plugins 
           key: ubuntu-latest-tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - name: Build core-lib
+        run: |
+          cd ${{ inputs.function-directory }}/core-lib
+          mkdir -p build/python
+          cp -r core_lib/ build/python/
+          cp -r requirements.txt build/
+          cp -r README.md build/
+          cd build
+          pip install -r requirements.txt -t python/
+          zip -r core-lib-layer.zip python/
+          rm -rf python/
 
       - name: Setup TFlint
         uses: terraform-linters/setup-tflint@v4
