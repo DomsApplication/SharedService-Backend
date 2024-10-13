@@ -44,7 +44,7 @@ jobs:
       TF_ROOT: ${{ inputs.working-directory }}
     environment: ${{ inputs.env || 'dev' }}
 
-    if: github.actor != 'dependabot[bot]' && ${{ github.event.inputs.infracost-verify-required == 'true' }}
+    if: github.actor != 'dependabot[bot]' && ${{ inputs.infracost-verify-required == 'true' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.0
