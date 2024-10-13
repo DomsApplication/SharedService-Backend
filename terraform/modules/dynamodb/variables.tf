@@ -64,5 +64,6 @@ variable "pipeline_token" {
 
 variable "data_source_name" {
   type        = string
+  default = "doms"
   description = "DynamoDB service name for data repository with all tenant base."
 }
