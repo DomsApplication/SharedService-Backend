@@ -147,6 +147,7 @@ jobs:
 
       - name: Build core-lib
         run: |
+          pwd
           cd ${{ inputs.function-directory }}/core-lib
           mkdir -p build/python
           cp -r core_lib/ build/python/
