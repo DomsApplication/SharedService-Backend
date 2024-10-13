@@ -18,6 +18,14 @@ on:
         required: false
         type: string
         default: "./functions-python"
+      infracost-verify-required:
+        description: "Select infracost verification required OR not"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 defaults:
   run:
@@ -36,7 +44,7 @@ jobs:
       TF_ROOT: ${{ inputs.working-directory }}
     environment: ${{ inputs.env || 'dev' }}
 
-    if: github.actor != 'dependabot[bot]' || ${{ secrets.INFRACOST_API_KEY && secrets.INFRACOST_API_KEY != 'NA' }}
+    if: github.actor != 'dependabot[bot]' && ${{ github.event.inputs.run_option == 'true' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.0
