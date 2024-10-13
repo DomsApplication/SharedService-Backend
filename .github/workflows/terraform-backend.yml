@@ -150,10 +150,11 @@ jobs:
           echo "Current directory/1: $(pwd)"
           cd ..
           echo "Current directory/2: $(pwd)"
-          cd functions-python/core-lib
+          ls -la
+          cd /functions-python/core-lib
           echo "Current directory/3: $(pwd)"
           mkdir -p build/python
-          cp -r core_lib/ build/python/
+          cp -r core-lib/ build/python/
           cp -r requirements.txt build/
           cp -r README.md build/
           cd build
