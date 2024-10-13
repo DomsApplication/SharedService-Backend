@@ -81,3 +81,8 @@ variable "lambda_names" {
   type    = list(string)
   description = "Using this variables creating aws lambdas, lambda roles and code archive"
 }
+
+variable "layer_zip_path_with_name" {
+  description = "this is the path with file name of layer zip file located under core-lib"
+  type = string
+}

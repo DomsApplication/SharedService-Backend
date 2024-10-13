@@ -48,7 +48,7 @@ data "aws_caller_identity" "current" {}
 resource "aws_lambda_layer_version" "python_libs" {
   layer_name = "${var.stack_name}-core-lib"
   description         = "Dependencies for the blank-python sample app."
-  filename            = "../functions-python/core_lib/build-lib/."
+  filename            = "${var.function_directory}/core_lib/${var.layer_zip_path_with_name}"
   compatible_architectures = [ "arm64" ]
   compatible_runtimes = ["python3.12"]
 }
