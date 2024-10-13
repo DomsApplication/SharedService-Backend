@@ -44,7 +44,7 @@ jobs:
       TF_ROOT: ${{ inputs.working-directory }}
     environment: ${{ inputs.env || 'dev' }}
 
-    if: github.actor != 'dependabot[bot]' && ${{ inputs.infracost-verify-required == 'true' }}
+    if: github.actor != 'dependabot[bot]'
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.0
@@ -67,6 +67,7 @@ jobs:
 
       # Generate Infracost json file
       - name: Generate Infracost estimate
+        if: ${{ inputs.infracost-verify-required == 'true' }} 
         run: |
           # passes a NPM_TOKEN which has access to private repo as client app doesn't pass such credential in when calling tf composite module.
           # credit: https://github.com/hashicorp/setup-terraform/issues/33
@@ -88,6 +89,7 @@ jobs:
       # update: Update a cost estimate comment when there is a changes in the cost estimate.
       # Also refer the https://www.infracost.io/docs/features/cli_commands/#comment-on-pull-requests 
       - name: Post Infracost comment
+        if: ${{ inputs.infracost-verify-required == 'true' }}
         run: |
           export INFRACOST_API_KEY=${{ secrets.INFRACOST_API_KEY }}
           infracost comment github --path=/tmp/infracost.json \
