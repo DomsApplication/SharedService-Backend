@@ -74,6 +74,12 @@ variable "data_source_name" {
 }
 
 ## lambda ###################################
+variable "layer_zip_path_with_name" {
+  description = "this is the path with file name of layer zip file located under core-lib"
+  type = string
+  default = "build/core-lib-layer.zip"
+}
+
 variable "lambda_names" {
   type    = list(string)
   description = "Using this variables creating aws lambdas, lambda roles and code archive"
@@ -82,6 +88,13 @@ variable "lambda_names" {
     "authorization",
     "admin"
   ]
+}
+
+## api-gateway ###################################
+variable "api_gateway_stage_name" {
+  type        = string
+  default = "v1"
+  description = "Stage name for the API Gateway"
 }
 
 

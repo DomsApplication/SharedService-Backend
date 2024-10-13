@@ -64,7 +64,6 @@ variable "pipeline_token" {
 
 variable "api_gateway_stage_name" {
   type        = string
-  default     = "v1"
   description = "Stage name for the API Gateway"
 }
 

@@ -81,6 +81,7 @@ module "lambda" {
 
   backend_s3_bucket_name = module.s3-bucket.backend_bucket_name
   data_source_table_name = module.dynamodb.data_source_table_name
+  layer_zip_path_with_name = var.layer_zip_path_with_name
   lambda_names = var.lambda_names
 }
 
@@ -103,6 +104,7 @@ module "api-gateway" {
   requestor_name = var.requestor_name
   pipeline_token = var.pipeline_token
 
+  api_gateway_stage_name = var.api_gateway_stage_name
   authentication_function_arn = module.lambda.authentication_lambda_arn
   authorization_function_arn = module.lambda.authorization_lambda_arn
   admin_function_arn = module.lambda.admin_lambda_arn

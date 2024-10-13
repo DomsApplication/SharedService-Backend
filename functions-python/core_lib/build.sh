@@ -14,6 +14,7 @@ cd build-lib
 pip install -r requirements.txt -t python/
 
 # Zip the contents
+# For MS winods -10 powe shell command is : Compress-Archive -Path python\* -DestinationPath core-lib-layer.zip
 zip -r core-lib-layer.zip python/
 
 # Clean up

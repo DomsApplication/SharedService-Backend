@@ -8,3 +8,4 @@ requestor_name  = "mahesha"
 
 data_source_name    = ""
 lambda_names        = ["authentication", "authorization", "admin"]
+api_gateway_stage_name = "v1"
