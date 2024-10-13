@@ -147,8 +147,11 @@ jobs:
 
       - name: Build core-lib
         run: |
-          pwd
-          cd ${{ inputs.function-directory }}/core-lib
+          echo "Current directory/1: $(pwd)"
+          cd ..
+          echo "Current directory/2: $(pwd)"
+          cd functions-python/core-lib
+          echo "Current directory/3: $(pwd)"
           mkdir -p build/python
           cp -r core_lib/ build/python/
           cp -r requirements.txt build/
